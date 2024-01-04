@@ -1,0 +1,262 @@
+!_TAG_FILE_SORTED	2	/0=unsorted, 1=sorted, 2=foldcase/
+<C-A>	/home/dream/.vimrc	/^map <C-A> ggVGY$/;"	m	language:Vim
+<C-A>	/home/dream/.vimrc	/^map! <C-A> <Esc>ggVGY$/;"	m	language:Vim
+<C-A>	/root/.vimrc	/^map <C-A> ggVGY$/;"	m	language:Vim
+<C-A>	/root/.vimrc	/^map! <C-A> <Esc>ggVGY$/;"	m	language:Vim
+<c-d>	/home/dream/.vimrc	/^noremap <silent> <c-d> :call smooth_scroll#down(&scroll, 0, 2)<CR>$/;"	m	language:Vim
+<c-d>	/root/.vimrc	/^noremap <silent> <c-d> :call smooth_scroll#down(&scroll, 0, 2)<CR>$/;"	m	language:Vim
+<C-h>	/home/dream/.vimrc	/^nnoremap <silent> <C-h> :TmuxNavigateLeft<cr>$/;"	m	language:Vim
+<C-h>	/root/.vimrc	/^nnoremap <silent> <C-h> :TmuxNavigateLeft<cr>$/;"	m	language:Vim
+<C-j>	/home/dream/.vimrc	/^nnoremap <silent> <C-j> :TmuxNavigateDown<cr>$/;"	m	language:Vim
+<C-j>	/root/.vimrc	/^nnoremap <silent> <C-j> :TmuxNavigateDown<cr>$/;"	m	language:Vim
+<C-k>	/home/dream/.vimrc	/^nnoremap <silent> <C-k> :TmuxNavigateUp<cr>$/;"	m	language:Vim
+<C-k>	/root/.vimrc	/^nnoremap <silent> <C-k> :TmuxNavigateUp<cr>$/;"	m	language:Vim
+<C-l>	/home/dream/.vimrc	/^nnoremap <silent> <C-l> :TmuxNavigateRight<cr>$/;"	m	language:Vim
+<C-l>	/root/.vimrc	/^nnoremap <silent> <C-l> :TmuxNavigateRight<cr>$/;"	m	language:Vim
+<C-n>	/home/dream/.vimrc	/^nnoremap <C-n> :NERDTreeToggle<CR>$/;"	m	language:Vim
+<C-n>	/root/.vimrc	/^nnoremap <C-n> :NERDTreeToggle<CR>$/;"	m	language:Vim
+<c-t>	/home/dream/.vimrc	/^    nmap <c-t> :TagbarToggle<CR>$/;"	m	language:Vim
+<c-t>	/root/.vimrc	/^    nmap <c-t> :TagbarToggle<CR>$/;"	m	language:Vim
+<c-u>	/home/dream/.vimrc	/^noremap <silent> <c-u> :call smooth_scroll#up(&scroll, 0, 2)<CR>$/;"	m	language:Vim
+<c-u>	/root/.vimrc	/^noremap <silent> <c-u> :call smooth_scroll#up(&scroll, 0, 2)<CR>$/;"	m	language:Vim
+<C-\>	/home/dream/.vimrc	/^nnoremap <silent> <C-\\> :TmuxNavigatePrevious<cr>$/;"	m	language:Vim
+<C-\>	/root/.vimrc	/^nnoremap <silent> <C-\\> :TmuxNavigatePrevious<cr>$/;"	m	language:Vim
+<F12>	/home/dream/.vimrc	/^map <F12> gg=G$/;"	m	language:Vim
+<F12>	/root/.vimrc	/^map <F12> gg=G$/;"	m	language:Vim
+<F8>	/home/dream/.vimrc	/^nmap <F8> :w<CR>:!dot -Tpng -o %<.png % && open \/Applications\/Preview.app %<.png<CR><CR>$/;"	m	language:Vim
+<F8>	/root/.vimrc	/^nmap <F8> :w<CR>:!dot -Tpng -o %<.png % && open \/Applications\/Preview.app %<.png<CR><CR>$/;"	m	language:Vim
+<Leader>0	/home/dream/.vimrc	/^nmap <Leader>0 :tablast<CR>$/;"	m	language:Vim
+<Leader>0	/root/.vimrc	/^nmap <Leader>0 :tablast<CR>$/;"	m	language:Vim
+<Leader>1	/home/dream/.vimrc	/^nmap <Leader>1 1gt$/;"	m	language:Vim
+<Leader>1	/home/dream/.vimrc	/^nmap <Leader>1 1gt$/;"	m	language:Vim
+<Leader>1	/root/.vimrc	/^nmap <Leader>1 1gt$/;"	m	language:Vim
+<Leader>1	/root/.vimrc	/^nmap <Leader>1 1gt$/;"	m	language:Vim
+<Leader>2	/home/dream/.vimrc	/^nmap <Leader>2 2gt$/;"	m	language:Vim
+<Leader>2	/root/.vimrc	/^nmap <Leader>2 2gt$/;"	m	language:Vim
+<Leader>3	/home/dream/.vimrc	/^nmap <Leader>3 3gt$/;"	m	language:Vim
+<Leader>3	/root/.vimrc	/^nmap <Leader>3 3gt$/;"	m	language:Vim
+<Leader>4	/home/dream/.vimrc	/^nmap <Leader>4 4gt$/;"	m	language:Vim
+<Leader>4	/root/.vimrc	/^nmap <Leader>4 4gt$/;"	m	language:Vim
+<Leader>5	/home/dream/.vimrc	/^nmap <Leader>5 5gt$/;"	m	language:Vim
+<Leader>5	/root/.vimrc	/^nmap <Leader>5 5gt$/;"	m	language:Vim
+<Leader>6	/home/dream/.vimrc	/^nmap <Leader>6 6gt$/;"	m	language:Vim
+<Leader>6	/root/.vimrc	/^nmap <Leader>6 6gt$/;"	m	language:Vim
+<Leader>7	/home/dream/.vimrc	/^nmap <Leader>7 7gt$/;"	m	language:Vim
+<Leader>7	/root/.vimrc	/^nmap <Leader>7 7gt$/;"	m	language:Vim
+<Leader>8	/home/dream/.vimrc	/^nmap <Leader>8 8gt$/;"	m	language:Vim
+<Leader>8	/root/.vimrc	/^nmap <Leader>8 8gt$/;"	m	language:Vim
+<Leader>9	/home/dream/.vimrc	/^nmap <Leader>9 9gt$/;"	m	language:Vim
+<Leader>9	/root/.vimrc	/^nmap <Leader>9 9gt$/;"	m	language:Vim
+<Leader>d	/home/dream/.vimrc	/^nmap <Leader>d :ALEDetail<CR>$/;"	m	language:Vim
+<Leader>d	/root/.vimrc	/^nmap <Leader>d :ALEDetail<CR>$/;"	m	language:Vim
+<leader>ev	/home/dream/.vimrc	/^nnoremap <leader>ev :vsplit $MYVIMRC<cr>$/;"	m	language:Vim
+<leader>ev	/root/.vimrc	/^nnoremap <leader>ev :vsplit $MYVIMRC<cr>$/;"	m	language:Vim
+<leader>ez	/home/dream/.vimrc	/^nnoremap <leader>ez :vsplit ~\/.zshrc<cr>$/;"	m	language:Vim
+<leader>ez	/root/.vimrc	/^nnoremap <leader>ez :vsplit ~\/.zshrc<cr>$/;"	m	language:Vim
+<leader>h	/home/dream/.vimrc	/^nnoremap <leader>h  :call HeightToSize(5)<cr>$/;"	m	language:Vim
+<leader>h	/root/.vimrc	/^nnoremap <leader>h  :call HeightToSize(5)<cr>$/;"	m	language:Vim
+<leader>h1	/home/dream/.vimrc	/^nnoremap <leader>h1 :call HeightToSize(10)<cr>$/;"	m	language:Vim
+<leader>h1	/root/.vimrc	/^nnoremap <leader>h1 :call HeightToSize(10)<cr>$/;"	m	language:Vim
+<leader>h2	/home/dream/.vimrc	/^nnoremap <leader>h2 :call HeightToSize(20)<cr>$/;"	m	language:Vim
+<leader>h2	/root/.vimrc	/^nnoremap <leader>h2 :call HeightToSize(20)<cr>$/;"	m	language:Vim
+<leader>h3	/home/dream/.vimrc	/^nnoremap <leader>h3 :call HeightToSize(30)<cr>$/;"	m	language:Vim
+<leader>h3	/root/.vimrc	/^nnoremap <leader>h3 :call HeightToSize(30)<cr>$/;"	m	language:Vim
+<leader>h4	/home/dream/.vimrc	/^nnoremap <leader>h4 :call HeightToSize(40)<cr>$/;"	m	language:Vim
+<leader>h4	/root/.vimrc	/^nnoremap <leader>h4 :call HeightToSize(40)<cr>$/;"	m	language:Vim
+<Leader>jd	/home/dream/.vimrc	/^nnoremap <Leader>jd :MyToolsServerCompilePro2<CR>$/;"	m	language:Vim
+<Leader>jd	/root/.vimrc	/^nnoremap <Leader>jd :MyToolsServerCompilePro2<CR>$/;"	m	language:Vim
+<Leader>jj	/home/dream/.vimrc	/^nnoremap <Leader>jj :MyToolsServerCompilePro<CR>$/;"	m	language:Vim
+<Leader>jj	/root/.vimrc	/^nnoremap <Leader>jj :MyToolsServerCompilePro<CR>$/;"	m	language:Vim
+<Leader>jmn	/home/dream/.vimrc	/^nnoremap <Leader>jmn :MyToolsServerCompileProWithMaven<CR>$/;"	m	language:Vim
+<Leader>jmn	/root/.vimrc	/^nnoremap <Leader>jmn :MyToolsServerCompileProWithMaven<CR>$/;"	m	language:Vim
+<Leader>jv	/home/dream/.vimrc	/^nnoremap <Leader>jv :JavaUnitExec<CR>$/;"	m	language:Vim
+<Leader>jv	/root/.vimrc	/^nnoremap <Leader>jv :JavaUnitExec<CR>$/;"	m	language:Vim
+<Leader>m	/home/dream/.vimrc	/^nmap <Leader>m %$/;"	m	language:Vim
+<Leader>m	/root/.vimrc	/^nmap <Leader>m %$/;"	m	language:Vim
+<leader>mm	/home/dream/.vimrc	/^nnoremap <leader>mm :call WidthToSize(1)<cr>$/;"	m	language:Vim
+<leader>mm	/root/.vimrc	/^nnoremap <leader>mm :call WidthToSize(1)<cr>$/;"	m	language:Vim
+<Leader>o	/home/dream/.vimrc	/^nnoremap <Leader>o :exec '!exec open %'<CR>$/;"	m	language:Vim
+<Leader>o	/root/.vimrc	/^nnoremap <Leader>o :exec '!exec open %'<CR>$/;"	m	language:Vim
+<Leader>p	/home/dream/.vimrc	/^nmap <Leader>p "+p$/;"	m	language:Vim
+<Leader>p	/root/.vimrc	/^nmap <Leader>p "+p$/;"	m	language:Vim
+<leader>ss	/home/dream/.vimrc	/^nnoremap <leader>ss :call WidthToSize(140)<cr>$/;"	m	language:Vim
+<leader>ss	/root/.vimrc	/^nnoremap <leader>ss :call WidthToSize(140)<cr>$/;"	m	language:Vim
+<leader>sv	/home/dream/.vimrc	/^nnoremap <leader>sv :source $MYVIMRC<cr>$/;"	m	language:Vim
+<leader>sv	/root/.vimrc	/^nnoremap <leader>sv :source $MYVIMRC<cr>$/;"	m	language:Vim
+<Leader>y	/home/dream/.vimrc	/^nmap <Leader>y :!echo --==<C-R><C-w>==-- ;ici <C-R><C-W><CR>$/;"	m	language:Vim
+<Leader>y	/home/dream/.vimrc	/^vnoremap <Leader>y "+y$/;"	m	language:Vim
+<Leader>y	/root/.vimrc	/^nmap <Leader>y :!echo --==<C-R><C-w>==-- ;ici <C-R><C-W><CR>$/;"	m	language:Vim
+<Leader>y	/root/.vimrc	/^vnoremap <Leader>y "+y$/;"	m	language:Vim
+array	/root/shell编程/fun_array.sh	/^array() {$/;"	f	language:Sh
+array	/root/shell编程/fun_array01.sh	/^array(){$/;"	f	language:Sh
+dbext_default_buffer_lines	/home/dream/.vimrc	/^let dbext_default_buffer_lines = 10$/;"	v	language:Vim
+dbext_default_buffer_lines	/root/.vimrc	/^let dbext_default_buffer_lines = 10$/;"	v	language:Vim
+display_cmd_line	/home/dream/.vimrc	/^let display_cmd_line = 1$/;"	v	language:Vim
+display_cmd_line	/root/.vimrc	/^let display_cmd_line = 1$/;"	v	language:Vim
+factorial	/root/shell编程/factorial.sh	/^function factorial() {$/;"	f	language:Sh
+fun2	/root/shell编程/return.sh	/^function fun2() {$/;"	f	language:Sh
+fun2	/root/shell编程/return_out.sh	/^function fun2() {$/;"	f	language:Sh
+fun3	/root/shell编程/parameter.sh	/^fun3() {$/;"	f	language:Sh
+g:ale_echo_msg_error_str	/home/dream/.vimrc	/^let g:ale_echo_msg_error_str = 'E'$/;"	v	language:Vim
+g:ale_echo_msg_error_str	/root/.vimrc	/^let g:ale_echo_msg_error_str = 'E'$/;"	v	language:Vim
+g:ale_echo_msg_format	/home/dream/.vimrc	/^let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'$/;"	v	language:Vim
+g:ale_echo_msg_format	/root/.vimrc	/^let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'$/;"	v	language:Vim
+g:ale_echo_msg_warning_str	/home/dream/.vimrc	/^let g:ale_echo_msg_warning_str = 'W'$/;"	v	language:Vim
+g:ale_echo_msg_warning_str	/root/.vimrc	/^let g:ale_echo_msg_warning_str = 'W'$/;"	v	language:Vim
+g:ale_lint_on_enter	/home/dream/.vimrc	/^let g:ale_lint_on_enter = 0$/;"	v	language:Vim
+g:ale_lint_on_enter	/root/.vimrc	/^let g:ale_lint_on_enter = 0$/;"	v	language:Vim
+g:ale_lint_on_text_changed	/home/dream/.vimrc	/^let g:ale_lint_on_text_changed = 'never'$/;"	v	language:Vim
+g:ale_lint_on_text_changed	/root/.vimrc	/^let g:ale_lint_on_text_changed = 'never'$/;"	v	language:Vim
+g:ale_set_highlights	/home/dream/.vimrc	/^let g:ale_set_highlights = 0$/;"	v	language:Vim
+g:ale_set_highlights	/root/.vimrc	/^let g:ale_set_highlights = 0$/;"	v	language:Vim
+g:ale_sign_error	/home/dream/.vimrc	/^let g:ale_sign_error = '✗'$/;"	v	language:Vim
+g:ale_sign_error	/root/.vimrc	/^let g:ale_sign_error = '✗'$/;"	v	language:Vim
+g:ale_sign_warning	/home/dream/.vimrc	/^let g:ale_sign_warning = '⚠'$/;"	v	language:Vim
+g:ale_sign_warning	/root/.vimrc	/^let g:ale_sign_warning = '⚠'$/;"	v	language:Vim
+g:ale_statusline_format	/home/dream/.vimrc	/^let g:ale_statusline_format = ['✗ %d', '⚠ %d', '✔ OK']$/;"	v	language:Vim
+g:ale_statusline_format	/root/.vimrc	/^let g:ale_statusline_format = ['✗ %d', '⚠ %d', '✔ OK']$/;"	v	language:Vim
+g:CommandTSCMDirectories	/home/dream/.vimrc	/^let g:CommandTSCMDirectories='.project,.git,.hg,.svn,.bzr,_darcs'$/;"	v	language:Vim
+g:CommandTSCMDirectories	/root/.vimrc	/^let g:CommandTSCMDirectories='.project,.git,.hg,.svn,.bzr,_darcs'$/;"	v	language:Vim
+g:ctrlp_max_height	/home/dream/.vimrc	/^let g:ctrlp_max_height = 3$/;"	v	language:Vim
+g:ctrlp_max_height	/root/.vimrc	/^let g:ctrlp_max_height = 3$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_crm	/home/dream/.vimrc	/^let g:dbext_default_profile_mySQL_crm= 'type=MYSQL:user=root:passwd=mysql:dbname=crm'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_crm	/root/.vimrc	/^let g:dbext_default_profile_mySQL_crm= 'type=MYSQL:user=root:passwd=mysql:dbname=crm'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_day05	/home/dream/.vimrc	/^let g:dbext_default_profile_mySQL_day05 = 'type=MYSQL:user=root:passwd=mysql:dbname=day05'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_day05	/root/.vimrc	/^let g:dbext_default_profile_mySQL_day05 = 'type=MYSQL:user=root:passwd=mysql:dbname=day05'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_heimashop	/home/dream/.vimrc	/^let g:dbext_default_profile_mySQL_heimashop = 'type=MYSQL:user=root:passwd=mysql:dbname=heimashop'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_heimashop	/root/.vimrc	/^let g:dbext_default_profile_mySQL_heimashop = 'type=MYSQL:user=root:passwd=mysql:dbname=heimashop'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_hibernate	/home/dream/.vimrc	/^let g:dbext_default_profile_mySQL_hibernate = 'type=MYSQL:user=root:passwd=mysql:dbname=hibernate'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_hibernate	/root/.vimrc	/^let g:dbext_default_profile_mySQL_hibernate = 'type=MYSQL:user=root:passwd=mysql:dbname=hibernate'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_mybatis	/home/dream/.vimrc	/^let g:dbext_default_profile_mySQL_mybatis= 'type=MYSQL:user=root:passwd=mysql:dbname=mybatis'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_mybatis	/root/.vimrc	/^let g:dbext_default_profile_mySQL_mybatis= 'type=MYSQL:user=root:passwd=mysql:dbname=mybatis'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_mydb1	/home/dream/.vimrc	/^let g:dbext_default_profile_mySQL_mydb1 = 'type=MYSQL:user=root:passwd=mysql:dbname=mydb1'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_mydb1	/root/.vimrc	/^let g:dbext_default_profile_mySQL_mydb1 = 'type=MYSQL:user=root:passwd=mysql:dbname=mydb1'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_springmvc	/home/dream/.vimrc	/^let g:dbext_default_profile_mySQL_springmvc= 'type=MYSQL:user=root:passwd=mysql:dbname=springmvc'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_springmvc	/root/.vimrc	/^let g:dbext_default_profile_mySQL_springmvc= 'type=MYSQL:user=root:passwd=mysql:dbname=springmvc'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_web08	/home/dream/.vimrc	/^let g:dbext_default_profile_mySQL_web08 = 'type=MYSQL:user=root:passwd=mysql:dbname=web08'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_web08	/root/.vimrc	/^let g:dbext_default_profile_mySQL_web08 = 'type=MYSQL:user=root:passwd=mysql:dbname=web08'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_whiteDream	/home/dream/.vimrc	/^let g:dbext_default_profile_mySQL_whiteDream = 'type=MYSQL:user=root:passwd=mysql:dbname=whiteDream'$/;"	v	language:Vim
+g:dbext_default_profile_mySQL_whiteDream	/root/.vimrc	/^let g:dbext_default_profile_mySQL_whiteDream = 'type=MYSQL:user=root:passwd=mysql:dbname=whiteDream'$/;"	v	language:Vim
+g:dbext_default_profile_ORA_Extended	/home/dream/.vimrc	/^let g:dbext_default_profile_ORA_Extended = 'type=ORA:user=scott:passwd=tiger:srvname=(description=(address=(protocol=TCP)(host=192.168.31.200)(port=1521))(connect_data=(server=dedicated)(service_name=orcl)))'$/;"	v	language:Vim
+g:dbext_default_profile_ORA_Extended	/root/.vimrc	/^let g:dbext_default_profile_ORA_Extended = 'type=ORA:user=scott:passwd=tiger:srvname=(description=(address=(protocol=TCP)(host=192.168.31.200)(port=1521))(connect_data=(server=dedicated)(service_name=orcl)))'$/;"	v	language:Vim
+g:dbext_default_profile_ORA_URL	/home/dream/.vimrc	/^let g:dbext_default_profile_ORA_URL = 'type=ORA:srvname=\/\/192.168.31.200\\:1521\/orcl:user=scott:passwd=tiger'$/;"	v	language:Vim
+g:dbext_default_profile_ORA_URL	/root/.vimrc	/^let g:dbext_default_profile_ORA_URL = 'type=ORA:srvname=\/\/192.168.31.200\\:1521\/orcl:user=scott:passwd=tiger'$/;"	v	language:Vim
+g:easytags_file	/home/dream/.vimrc	/^let g:easytags_file = '~\/.vim\/tags'$/;"	v	language:Vim
+g:easytags_file	/root/.vimrc	/^let g:easytags_file = '~\/.vim\/tags'$/;"	v	language:Vim
+g:graphviz_output_format	/home/dream/.vimrc	/^let g:graphviz_output_format = 'png'$/;"	v	language:Vim
+g:graphviz_output_format	/root/.vimrc	/^let g:graphviz_output_format = 'png'$/;"	v	language:Vim
+g:indent_guides_enable_on_vim_startup	/home/dream/.vimrc	/^let g:indent_guides_enable_on_vim_startup=1$/;"	v	language:Vim
+g:indent_guides_enable_on_vim_startup	/root/.vimrc	/^let g:indent_guides_enable_on_vim_startup=1$/;"	v	language:Vim
+g:indent_guides_guide_size	/home/dream/.vimrc	/^let g:indent_guides_guide_size=1$/;"	v	language:Vim
+g:indent_guides_guide_size	/root/.vimrc	/^let g:indent_guides_guide_size=1$/;"	v	language:Vim
+g:indent_guides_start_level	/home/dream/.vimrc	/^let g:indent_guides_start_level=0$/;"	v	language:Vim
+g:indent_guides_start_level	/root/.vimrc	/^let g:indent_guides_start_level=0$/;"	v	language:Vim
+g:JavaComplete_ImportDefault	/home/dream/.vimrc	/^let g:JavaComplete_ImportDefault = -1$/;"	v	language:Vim
+g:JavaComplete_ImportDefault	/root/.vimrc	/^let g:JavaComplete_ImportDefault = -1$/;"	v	language:Vim
+g:JavaComplete_ShowExternalCommandsOutput	/home/dream/.vimrc	/^let g:JavaComplete_ShowExternalCommandsOutput=1$/;"	v	language:Vim
+g:JavaComplete_ShowExternalCommandsOutput	/root/.vimrc	/^let g:JavaComplete_ShowExternalCommandsOutput=1$/;"	v	language:Vim
+g:javascript_plugin_jsdoc	/home/dream/.vimrc	/^let g:javascript_plugin_jsdoc = 1$/;"	v	language:Vim
+g:javascript_plugin_jsdoc	/root/.vimrc	/^let g:javascript_plugin_jsdoc = 1$/;"	v	language:Vim
+g:lightline	/home/dream/.vimrc	/^let g:lightline = {$/;"	v	language:Vim
+g:lightline	/root/.vimrc	/^let g:lightline = {$/;"	v	language:Vim
+g:neoterm_default_mod	/home/dream/.vimrc	/^let g:neoterm_default_mod="belowright"$/;"	v	language:Vim
+g:neoterm_default_mod	/root/.vimrc	/^let g:neoterm_default_mod="belowright"$/;"	v	language:Vim
+g:syntastic_ignore_files	/home/dream/.vimrc	/^let g:syntastic_ignore_files=[".*\\.py$"] $/;"	v	language:Vim
+g:syntastic_ignore_files	/root/.vimrc	/^let g:syntastic_ignore_files=[".*\\.py$"] $/;"	v	language:Vim
+g:tagbar_autoclose	/home/dream/.vimrc	/^let g:tagbar_autoclose = 1$/;"	v	language:Vim
+g:tagbar_autoclose	/root/.vimrc	/^let g:tagbar_autoclose = 1$/;"	v	language:Vim
+g:tagbar_autofocus	/home/dream/.vimrc	/^    let g:tagbar_autofocus = 1                      $/;"	v	language:Vim
+g:tagbar_autofocus	/root/.vimrc	/^    let g:tagbar_autofocus = 1                      $/;"	v	language:Vim
+g:tagbar_ctags_bin	/home/dream/.vimrc	/^    let g:tagbar_ctags_bin = 'ctags'                $/;"	v	language:Vim
+g:tagbar_ctags_bin	/root/.vimrc	/^    let g:tagbar_ctags_bin = 'ctags'                $/;"	v	language:Vim
+g:tagbar_left	/home/dream/.vimrc	/^    let g:tagbar_left = 0$/;"	v	language:Vim
+g:tagbar_left	/root/.vimrc	/^    let g:tagbar_left = 0$/;"	v	language:Vim
+g:tagbar_sort	/home/dream/.vimrc	/^    let g:tagbar_sort = 0                           $/;"	v	language:Vim
+g:tagbar_sort	/root/.vimrc	/^    let g:tagbar_sort = 0                           $/;"	v	language:Vim
+g:tagbar_width	/home/dream/.vimrc	/^    let g:tagbar_width = 30                         $/;"	v	language:Vim
+g:tagbar_width	/root/.vimrc	/^    let g:tagbar_width = 30                         $/;"	v	language:Vim
+g:tmuxline_powerline_separators	/home/dream/.vimrc	/^let g:tmuxline_powerline_separators = 0$/;"	v	language:Vim
+g:tmuxline_powerline_separators	/root/.vimrc	/^let g:tmuxline_powerline_separators = 0$/;"	v	language:Vim
+g:tmuxline_preset	/home/dream/.vimrc	/^let g:tmuxline_preset = {$/;"	v	language:Vim
+g:tmuxline_preset	/root/.vimrc	/^let g:tmuxline_preset = {$/;"	v	language:Vim
+g:tmuxline_theme	/home/dream/.vimrc	/^let g:tmuxline_theme = {$/;"	v	language:Vim
+g:tmuxline_theme	/root/.vimrc	/^let g:tmuxline_theme = {$/;"	v	language:Vim
+g:tmux_navigator_no_mappings	/home/dream/.vimrc	/^let g:tmux_navigator_no_mappings = 1$/;"	v	language:Vim
+g:tmux_navigator_no_mappings	/root/.vimrc	/^let g:tmux_navigator_no_mappings = 1$/;"	v	language:Vim
+g:tmux_navigator_save_on_switch	/home/dream/.vimrc	/^let g:tmux_navigator_save_on_switch = 2$/;"	v	language:Vim
+g:tmux_navigator_save_on_switch	/root/.vimrc	/^let g:tmux_navigator_save_on_switch = 2$/;"	v	language:Vim
+g:UltiSnipsExpandTrigger	/home/dream/.vimrc	/^    let g:UltiSnipsExpandTrigger="<C-l>"$/;"	v	language:Vim
+g:UltiSnipsExpandTrigger	/root/.vimrc	/^    let g:UltiSnipsExpandTrigger="<C-l>"$/;"	v	language:Vim
+g:UltiSnipsJumpBackwardTrigger	/home/dream/.vimrc	/^	let g:UltiSnipsJumpBackwardTrigger="<C-b>"$/;"	v	language:Vim
+g:UltiSnipsJumpBackwardTrigger	/root/.vimrc	/^	let g:UltiSnipsJumpBackwardTrigger="<C-b>"$/;"	v	language:Vim
+g:UltiSnipsJumpForwardTrigger	/home/dream/.vimrc	/^	let g:UltiSnipsJumpForwardTrigger="<C-f>"$/;"	v	language:Vim
+g:UltiSnipsJumpForwardTrigger	/root/.vimrc	/^	let g:UltiSnipsJumpForwardTrigger="<C-f>"$/;"	v	language:Vim
+g:ycm_add_preview_to_completeopt	/home/dream/.vimrc	/^let g:ycm_add_preview_to_completeopt = 0$/;"	v	language:Vim
+g:ycm_add_preview_to_completeopt	/root/.vimrc	/^let g:ycm_add_preview_to_completeopt = 0$/;"	v	language:Vim
+g:ycm_cache_omnifunc	/home/dream/.vimrc	/^let g:ycm_cache_omnifunc=0$/;"	v	language:Vim
+g:ycm_cache_omnifunc	/home/dream/.vimrc	/^let g:ycm_cache_omnifunc=0$/;"	v	language:Vim
+g:ycm_cache_omnifunc	/root/.vimrc	/^let g:ycm_cache_omnifunc=0$/;"	v	language:Vim
+g:ycm_cache_omnifunc	/root/.vimrc	/^let g:ycm_cache_omnifunc=0$/;"	v	language:Vim
+g:ycm_complete_in_comments	/home/dream/.vimrc	/^let g:ycm_complete_in_comments=1"$/;"	v	language:Vim
+g:ycm_complete_in_comments	/home/dream/.vimrc	/^let g:ycm_complete_in_comments=1$/;"	v	language:Vim
+g:ycm_complete_in_comments	/root/.vimrc	/^let g:ycm_complete_in_comments=1"$/;"	v	language:Vim
+g:ycm_complete_in_comments	/root/.vimrc	/^let g:ycm_complete_in_comments=1$/;"	v	language:Vim
+g:ycm_confirm_extra_conf	/home/dream/.vimrc	/^let g:ycm_confirm_extra_conf=0$/;"	v	language:Vim
+g:ycm_confirm_extra_conf	/home/dream/.vimrc	/^let g:ycm_confirm_extra_conf=0$/;"	v	language:Vim
+g:ycm_confirm_extra_conf	/root/.vimrc	/^let g:ycm_confirm_extra_conf=0$/;"	v	language:Vim
+g:ycm_confirm_extra_conf	/root/.vimrc	/^let g:ycm_confirm_extra_conf=0$/;"	v	language:Vim
+g:ycm_enable_diagnostic_highlighting	/home/dream/.vimrc	/^let g:ycm_enable_diagnostic_highlighting = 0$/;"	v	language:Vim
+g:ycm_enable_diagnostic_highlighting	/root/.vimrc	/^let g:ycm_enable_diagnostic_highlighting = 0$/;"	v	language:Vim
+g:ycm_enable_diagnostic_signs	/home/dream/.vimrc	/^let g:ycm_enable_diagnostic_signs = 0$/;"	v	language:Vim
+g:ycm_enable_diagnostic_signs	/root/.vimrc	/^let g:ycm_enable_diagnostic_signs = 0$/;"	v	language:Vim
+g:ycm_global_ycm_extra_conf	/home/dream/.vimrc	/^let g:ycm_global_ycm_extra_conf = '~\/.vim\/bundle\/YouCompleteMe\/cpp\/ycm\/.ycm_extra_conf.py'$/;"	v	language:Vim
+g:ycm_global_ycm_extra_conf	/root/.vimrc	/^let g:ycm_global_ycm_extra_conf = '~\/.vim\/bundle\/YouCompleteMe\/cpp\/ycm\/.ycm_extra_conf.py'$/;"	v	language:Vim
+g:ycm_key_invoke_completion	/home/dream/.vimrc	/^let g:ycm_key_invoke_completion = '<M-;>'$/;"	v	language:Vim
+g:ycm_key_invoke_completion	/root/.vimrc	/^let g:ycm_key_invoke_completion = '<M-;>'$/;"	v	language:Vim
+g:ycm_min_num_of_chars_for_completion	/home/dream/.vimrc	/^let g:ycm_min_num_of_chars_for_completion=2$/;"	v	language:Vim
+g:ycm_min_num_of_chars_for_completion	/root/.vimrc	/^let g:ycm_min_num_of_chars_for_completion=2$/;"	v	language:Vim
+g:ycm_seed_identifiers_with_syntax	/home/dream/.vimrc	/^let g:ycm_seed_identifiers_with_syntax = 1$/;"	v	language:Vim
+g:ycm_seed_identifiers_with_syntax	/home/dream/.vimrc	/^let g:ycm_seed_identifiers_with_syntax=1$/;"	v	language:Vim
+g:ycm_seed_identifiers_with_syntax	/root/.vimrc	/^let g:ycm_seed_identifiers_with_syntax = 1$/;"	v	language:Vim
+g:ycm_seed_identifiers_with_syntax	/root/.vimrc	/^let g:ycm_seed_identifiers_with_syntax=1$/;"	v	language:Vim
+g:ycm_semantic_triggers	/home/dream/.vimrc	/^let g:ycm_semantic_triggers = {$/;"	v	language:Vim
+g:ycm_semantic_triggers	/root/.vimrc	/^let g:ycm_semantic_triggers = {$/;"	v	language:Vim
+g:ycm_show_diagnostics_ui	/home/dream/.vimrc	/^let g:ycm_show_diagnostics_ui = 1$/;"	v	language:Vim
+g:ycm_show_diagnostics_ui	/root/.vimrc	/^let g:ycm_show_diagnostics_ui = 1$/;"	v	language:Vim
+mapleader	/home/dream/.vimrc	/^let mapleader=";"$/;"	v	language:Vim
+mapleader	/root/.vimrc	/^let mapleader=";"$/;"	v	language:Vim
+myfunction	/home/dream/test/hello.html	/^		function myfunction(){$/;"	f	language:HTML
+neoterm_autojump	/home/dream/.vimrc	/^let neoterm_autojump=1$/;"	v	language:Vim
+neoterm_autojump	/root/.vimrc	/^let neoterm_autojump=1$/;"	v	language:Vim
+NERDTreeAutoDeleteBuffer	/home/dream/.vimrc	/^let NERDTreeAutoDeleteBuffer=1$/;"	v	language:Vim
+NERDTreeAutoDeleteBuffer	/root/.vimrc	/^let NERDTreeAutoDeleteBuffer=1$/;"	v	language:Vim
+NERDTreeIgnore	/home/dream/.vimrc	/^let NERDTreeIgnore=[ '\\.pyc$', '\\.pyo$', '\\.py\\$', '\\.obj$',$/;"	v	language:Vim
+NERDTreeIgnore	/root/.vimrc	/^let NERDTreeIgnore=[ '\\.pyc$', '\\.pyo$', '\\.py\\$', '\\.obj$',$/;"	v	language:Vim
+NERDTreeMinimalUI	/home/dream/.vimrc	/^let NERDTreeMinimalUI=1$/;"	v	language:Vim
+NERDTreeMinimalUI	/root/.vimrc	/^let NERDTreeMinimalUI=1$/;"	v	language:Vim
+NERDTreeQuitOnOpen	/home/dream/.vimrc	/^let NERDTreeQuitOnOpen=1$/;"	v	language:Vim
+NERDTreeQuitOnOpen	/root/.vimrc	/^let NERDTreeQuitOnOpen=1$/;"	v	language:Vim
+NERDTreeShowHidden	/home/dream/.vimrc	/^let NERDTreeShowHidden=1$/;"	v	language:Vim
+NERDTreeShowHidden	/root/.vimrc	/^let NERDTreeShowHidden=1$/;"	v	language:Vim
+NERDTreeShowLineNumbers	/home/dream/.vimrc	/^let NERDTreeShowLineNumbers = 1$/;"	v	language:Vim
+NERDTreeShowLineNumbers	/root/.vimrc	/^let NERDTreeShowLineNumbers = 1$/;"	v	language:Vim
+NERDTreeWinPos	/home/dream/.vimrc	/^let NERDTreeWinPos="left"$/;"	v	language:Vim
+NERDTreeWinPos	/root/.vimrc	/^let NERDTreeWinPos="left"$/;"	v	language:Vim
+NERDTreeWinSize	/home/dream/.vimrc	/^let NERDTreeWinSize=40$/;"	v	language:Vim
+NERDTreeWinSize	/root/.vimrc	/^let NERDTreeWinSize=40$/;"	v	language:Vim
+ping_success	/root/shell编程/ping_count3_03.sh	/^ping_success() {$/;"	f	language:Sh
+s:isJava	/home/dream/.vimrc	/^let s:isJava = fnamemodify(expand('%'),':p:e')$/;"	v	language:Vim
+s:isJava	/root/.vimrc	/^let s:isJava = fnamemodify(expand('%'),':p:e')$/;"	v	language:Vim
+sn	/home/dream/.vimrc	/^nmap sn <Plug>(ale_next_wrap)$/;"	m	language:Vim
+sn	/root/.vimrc	/^nmap sn <Plug>(ale_next_wrap)$/;"	m	language:Vim
+sp	/home/dream/.vimrc	/^nmap sp <Plug>(ale_previous_wrap)$/;"	m	language:Vim
+sp	/root/.vimrc	/^nmap sp <Plug>(ale_previous_wrap)$/;"	m	language:Vim
+Test	/home/dream/test/hello.java	/^public class Test(){$/;"	m	language:Java
+w,	/home/dream/.vimrc	/^nmap w, :vertical resize -3<CR>$/;"	m	language:Vim
+w,	/root/.vimrc	/^nmap w, :vertical resize -3<CR>$/;"	m	language:Vim
+w-	/home/dream/.vimrc	/^nmap w- :resize -3<CR>$/;"	m	language:Vim
+w-	/root/.vimrc	/^nmap w- :resize -3<CR>$/;"	m	language:Vim
+w.	/home/dream/.vimrc	/^nmap w. :vertical resize +3<CR>$/;"	m	language:Vim
+w.	/root/.vimrc	/^nmap w. :vertical resize +3<CR>$/;"	m	language:Vim
+w=	/home/dream/.vimrc	/^nmap w= :resize +3<CR>$/;"	m	language:Vim
+w=	/root/.vimrc	/^nmap w= :resize +3<CR>$/;"	m	language:Vim
