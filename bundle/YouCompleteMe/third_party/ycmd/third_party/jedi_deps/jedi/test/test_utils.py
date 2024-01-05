@@ -2,10 +2,9 @@ try:
     import readline
 except ImportError:
     readline = False
+import unittest
 
 from jedi import utils
-
-from .helpers import unittest
 
 
 @unittest.skipIf(not readline, "readline not found")
@@ -14,7 +13,7 @@ class TestSetupReadline(unittest.TestCase):
         pass
 
     def __init__(self, *args, **kwargs):
-        super(type(self), self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.namespace = self.NameSpace()
         utils.setup_readline(self.namespace)
@@ -80,11 +79,13 @@ class TestSetupReadline(unittest.TestCase):
         difference = {
             x for x in difference
             if all(not x.startswith('from os import ' + s)
-                   for s in ['_', 'O_', 'EX_', 'MFD_', 'SF_', 'ST_'])
+                   for s in ['_', 'O_', 'EX_', 'MFD_', 'SF_', 'ST_',
+                             'CLD_', 'POSIX_SPAWN_', 'P_', 'RWF_',
+                             'CLONE_', 'SCHED_'])
         }
         # There are quite a few differences, because both Windows and Linux
-        # (posix and nt) librariesare included.
-        assert len(difference) < 20
+        # (posix and nt) libraries are included.
+        assert len(difference) < 30
 
     def test_local_import(self):
         s = 'import test.test_utils'

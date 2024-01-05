@@ -44,8 +44,7 @@ Options:
   --pudb                Launch pudb when error is raised.
 """
 
-from __future__ import print_function, division, unicode_literals
-from docopt import docopt
+from docopt import docopt  # type: ignore[import]
 
 import json
 import os
@@ -123,7 +122,7 @@ class TestCase(object):
             with open(self.path) as f:
                 self.script = jedi.Script(f.read(), path=self.path)
             kwargs = {}
-            if self.operation == 'goto_assignments':
+            if self.operation == 'goto':
                 kwargs['follow_imports'] = random.choice([False, True])
 
             self.objects = getattr(self.script, self.operation)(self.line, self.column, **kwargs)
@@ -177,9 +176,9 @@ class TestCase(object):
     def show_errors(self):
         sys.stderr.write(self.traceback)
         print(("Error with running Script(...).{operation}() with\n"
-              "\tpath:   {path}\n"
-              "\tline:   {line}\n"
-              "\tcolumn: {column}").format(**self.__dict__))
+               "\tpath:   {path}\n"
+               "\tline:   {line}\n"
+               "\tcolumn: {column}").format(**self.__dict__))
 
 
 def main(arguments):
@@ -199,10 +198,10 @@ def main(arguments):
         else:
             t.run(debugger)
     elif arguments['run']:
-            TestCase(
-                arguments['<operation>'], arguments['<path>'],
-                int(arguments['<line>']), int(arguments['<column>'])
-            ).run(debugger, print_result=True)
+        TestCase(
+            arguments['<operation>'], arguments['<path>'],
+            int(arguments['<line>']), int(arguments['<column>'])
+        ).run(debugger, print_result=True)
     else:
         for _ in range(int(arguments['--maxtries'])):
             t = TestCase.generate(arguments['<path>'] or '.')

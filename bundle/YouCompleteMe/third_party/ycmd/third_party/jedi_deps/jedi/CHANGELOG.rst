@@ -3,6 +3,81 @@
 Changelog
 ---------
 
+Unreleased
+++++++++++
+
+0.19.1 (2023-10-02)
++++++++++++++++++++
+
+- Python 3.12 support (Thanks Peter!)
+
+0.19.0 (2023-07-29)
++++++++++++++++++++
+
+- Python 3.11 support
+- Massive improvements in performance for ``Interpreter`` (e.g. IPython) users.
+  This especially affects ``pandas`` users with large datasets.
+- Add ``jedi.settings.allow_unsafe_interpreter_executions`` to make it easier
+  for IPython users to avoid unsafe executions.
+
+0.18.2 (2022-11-21)
++++++++++++++++++++
+
+- Added dataclass-equivalent for attrs.define
+- Find fixtures from Pytest entrypoints; Examples of pytest plugins installed
+  like this are pytest-django, pytest-sugar and Faker.
+- Fixed Project.search, when a venv was involved, which is why for example
+  `:Pyimport django.db` did not work in some cases in jedi-vim.
+- And many smaller bugfixes
+
+0.18.1 (2021-11-17)
++++++++++++++++++++
+
+- Implict namespaces are now a separate types in ``Name().type``
+- Python 3.10 support
+- Mostly bugfixes
+
+0.18.0 (2020-12-25)
++++++++++++++++++++
+
+- Dropped Python 2 and Python 3.5
+- Using ``pathlib.Path()`` as an output instead of ``str`` in most places:
+  - ``Project.path``
+  - ``Script.path``
+  - ``Definition.module_path``
+  - ``Refactoring.get_renames``
+  - ``Refactoring.get_changed_files``
+- Functions with ``@property`` now return ``property`` instead of ``function``
+  in ``Name().type``
+- Started using annotations
+- Better support for the walrus operator
+- Project attributes are now read accessible
+- Removed all deprecations
+
+This is likely going to be the last minor release before 1.0.
+
+0.17.2 (2020-07-17)
++++++++++++++++++++
+
+- Added an option to pass environment variables to ``Environment``
+- ``Project(...).path`` exists now
+- Support for Python 3.9
+- A few bugfixes
+
+This will be the last release that supports Python 2 and Python 3.5.
+``0.18.0`` will be Python 3.6+.
+
+0.17.1 (2020-06-20)
++++++++++++++++++++
+
+- Django ``Model`` meta class support
+- Django Manager support (completion on Managers/QuerySets)
+- Added Django Stubs to Jedi, thanks to all contributors of the
+  `Django Stubs <https://github.com/typeddjango/django-stubs>`_ project
+- Added ``SyntaxError.get_message``
+- Python 3.9 support
+- Bugfixes (mostly towards Generics)
+
 0.17.0 (2020-04-14)
 +++++++++++++++++++
 

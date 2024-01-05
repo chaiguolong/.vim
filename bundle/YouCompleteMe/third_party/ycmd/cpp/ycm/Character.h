@@ -19,6 +19,7 @@
 #define CHARACTER_H_YTIET2HZ
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace YouCompleteMe {
@@ -26,32 +27,32 @@ namespace YouCompleteMe {
 // This class represents a UTF-8 character. It takes a UTF-8 encoded string
 // corresponding to a grapheme cluster (see
 // https://www.unicode.org/glossary/#grapheme_cluster), normalize it through NFD
-// (see https://www.unicode.org/versions/Unicode13.0.0/ch03.pdf#G49621), and
+// (see https://www.unicode.org/versions/latest/ch03.pdf#G49621), and
 // compute the folded and swapped case versions of the normalized character. It
 // also holds some properties like if the character is a letter or a
 // punctuation, and if it is uppercase.
 class Character {
 public:
-  YCM_EXPORT explicit Character( const std::string &character );
+  YCM_EXPORT explicit Character( std::string_view character );
   // Make class noncopyable
   Character( const Character& ) = delete;
   Character& operator=( const Character& ) = delete;
   Character( Character&& ) = default;
   Character& operator=( Character&& ) = default;
 
-  inline std::string Normal() const {
+  inline const std::string &Normal() const {
     return normal_;
   }
 
-  inline std::string Base() const {
+  inline const std::string &Base() const {
     return base_;
   }
 
-  inline std::string FoldedCase() const {
+  inline const std::string &FoldedCase() const {
     return folded_case_;
   }
 
-  inline std::string SwappedCase() const {
+  inline const std::string &SwappedCase() const {
     return swapped_case_;
   }
 
@@ -106,6 +107,8 @@ private:
   bool is_uppercase_;
 };
 
+
+YCM_EXPORT std::string NormalizeInput( std::string_view text );
 
 using CharacterSequence = std::vector< const Character * >;
 

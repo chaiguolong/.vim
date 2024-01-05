@@ -3,7 +3,6 @@
 
 from textwrap import dedent
 from inspect import cleandoc
-import os
 
 import pytest
 
@@ -189,14 +188,11 @@ def test_functions_should_have_params(Script):
                 assert c.get_signatures()
 
 
-def test_hashlib_params(Script, environment):
-    if environment.version_info < (3,):
-        pytest.skip()
-
+def test_hashlib_params(Script):
     script = Script('from hashlib import sha256')
     c, = script.complete()
     sig, = c.get_signatures()
-    assert [p.name for p in sig.params] == ['arg']
+    assert [p.name for p in sig.params] == ['string']
 
 
 def test_signature_params(Script):
@@ -374,6 +370,34 @@ def test_type_II(Script):
             assert c.type == 'keyword'
 
 
+@pytest.mark.parametrize(
+    'added_code, expected_type, expected_infer_type', [
+        ('Foo().x', 'property', 'instance'),
+        ('Foo.x', 'property', 'property'),
+        ('Foo().y', 'function', 'function'),
+        ('Foo.y', 'function', 'function'),
+        ('Foo().z', 'function', 'function'),
+        ('Foo.z', 'function', 'function'),
+    ]
+)
+def test_class_types(goto_or_help_or_infer, added_code, expected_type,
+                     expected_infer_type):
+    code = dedent('''\
+        class Foo:
+            @property
+            def x(self): return 1
+            @staticmethod
+            def y(self): ...
+            @classmethod
+            def z(self): ...
+        ''')
+    d, = goto_or_help_or_infer(code + added_code)
+    if goto_or_help_or_infer.type == 'infer':
+        assert d.type == expected_infer_type
+    else:
+        assert d.type == expected_type
+
+
 """
 This tests the BaseName.goto function, not the jedi
 function. They are not really different in functionality, but really
@@ -486,10 +510,14 @@ def test_added_equals_to_params(Script):
 
     assert run('foo(bar').name_with_symbols == 'bar='
     assert run('foo(bar').complete == '='
+    assert run('foo(bar').get_completion_prefix_length() == 3
     assert run('foo(bar, baz').complete == '='
+    assert run('foo(bar, baz').get_completion_prefix_length() == 3
     assert run('    bar').name_with_symbols == 'bar'
     assert run('    bar').complete == ''
+    assert run('    bar').get_completion_prefix_length() == 3
     x = run('foo(bar=isins').name_with_symbols
+    assert run('foo(bar=isins').get_completion_prefix_length() == 5
     assert x == 'isinstance'
 
 
@@ -534,8 +562,8 @@ def test_execute(Script, code, description):
         ('from pkg import Foo; Foo().bar', 'bar', 'module.py'),
     ])
 def test_inheritance_module_path(Script, goto, code, name, file_name):
-    base_path = os.path.join(get_example_dir('inheritance'), 'pkg')
-    whatever_path = os.path.join(base_path, 'NOT_EXISTING.py')
+    base_path = get_example_dir('inheritance', 'pkg')
+    whatever_path = base_path.joinpath('NOT_EXISTING.py')
 
     script = Script(code, path=whatever_path)
     if goto is None:
@@ -544,7 +572,7 @@ def test_inheritance_module_path(Script, goto, code, name, file_name):
         func, = script.goto(follow_imports=goto)
     assert func.type == 'function'
     assert func.name == name
-    assert func.module_path == os.path.join(base_path, file_name)
+    assert func.module_path == base_path.joinpath(file_name)
 
 
 def test_definition_goto_follow_imports(Script):
@@ -588,14 +616,50 @@ def test_definition_goto_follow_imports(Script):
 
         ('n = next; n', 'Union[next(__i: Iterator[_T]) -> _T, '
          'next(__i: Iterator[_T], default: _VT) -> Union[_T, _VT]]'),
-        ('abs', 'abs(__n: SupportsAbs[_T]) -> _T'),
+        ('abs', 'abs(__x: SupportsAbs[_T]) -> _T'),
         ('def foo(x, y): return x if xxxx else y\nfoo(str(), 1)\nfoo',
          'foo(x: str, y: int) -> Union[int, str]'),
         ('def foo(x, y = None): return x if xxxx else y\nfoo(str(), 1)\nfoo',
          'foo(x: str, y: int=None) -> Union[int, str]'),
     ]
 )
-def test_get_type_hint(Script, code, expected, skip_pre_python36):
+def test_get_type_hint(Script, code, expected):
     code = 'from typing import *\n' + code
     d, = Script(code).goto()
     assert d.get_type_hint() == expected
+
+
+def test_pseudotreenameclass_type(Script):
+    assert Script('from typing import Any\n').get_names()[0].type == 'class'
+
+
+cls_code = '''\
+class AClass:
+    """my class"""
+    @staticmethod
+    def hello():
+        func_var = 1
+        return func_var
+'''
+
+
+@pytest.mark.parametrize(
+    'code, pos, start, end', [
+        ('def a_func():\n    return "bar"\n', (1, 4), (1, 0), (2, 16)),
+        ('var1 = 12', (1, 0), (1, 0), (1, 9)),
+        ('var1 + 1', (1, 0), (1, 0), (1, 4)),
+        ('class AClass: pass', (1, 6), (1, 0), (1, 18)),
+        ('class AClass: pass\n', (1, 6), (1, 0), (1, 18)),
+        (cls_code, (1, 6), (1, 0), (6, 23)),
+        (cls_code, (4, 8), (4, 4), (6, 23)),
+        (cls_code, (5, 8), (5, 8), (5, 20)),
+    ]
+)
+def test_definition_start_end_position(Script, code, pos, start, end):
+    '''Tests for definition_start_position and definition_end_position'''
+    name = next(
+        n for n in Script(code=code).get_names(all_scopes=True, references=True)
+        if n._name.tree_name.start_pos <= pos <= n._name.tree_name.end_pos
+    )
+    assert name.get_definition_start_position() == start
+    assert name.get_definition_end_position() == end

@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2020 ycmd contributors
+# Copyright (C) 2016-2021 ycmd contributors
 #
 # This file is part of ycmd.
 #
@@ -19,6 +19,7 @@ from base64 import b64decode, b64encode
 from hamcrest import assert_that, empty, equal_to, is_in
 from hmac import compare_digest
 from tempfile import NamedTemporaryFile
+from unittest import TestCase
 import functools
 import json
 import os
@@ -45,8 +46,8 @@ PATH_TO_YCMD = os.path.join( DIR_OF_THIS_SCRIPT, '..' )
 LOGFILE_FORMAT = 'server_{port}_{std}_'
 
 
-class Client_test:
-  def setup_method( self ):
+class ClientTest( TestCase ):
+  def setUp( self ):
     self._location = None
     self._port = None
     self._servers = []
@@ -58,7 +59,7 @@ class Client_test:
       b64encode( self._hmac_secret ) )
 
 
-  def teardown_method( self ):
+  def tearDown( self ):
     for server in self._servers:
       if server.is_running():
         server.terminate()
@@ -84,11 +85,11 @@ class Client_test:
     ycmd_args = [
       sys.executable,
       PATH_TO_YCMD,
-      '--port={0}'.format( self._port ),
-      '--options_file={0}'.format( options_file.name ),
+      f'--port={ self._port }',
+      f'--options_file={ options_file.name }',
       '--log=debug',
-      '--idle_suicide_seconds={0}'.format( idle_suicide_seconds ),
-      '--check_interval_seconds={0}'.format( check_interval_seconds ),
+      f'--idle_suicide_seconds={ idle_suicide_seconds }',
+      f'--check_interval_seconds={ check_interval_seconds }',
     ]
 
     stdout = CreateLogfile(
@@ -96,8 +97,8 @@ class Client_test:
     stderr = CreateLogfile(
         LOGFILE_FORMAT.format( port = self._port, std = 'stderr' ) )
     self._logfiles.extend( [ stdout, stderr ] )
-    ycmd_args.append( '--stdout={0}'.format( stdout ) )
-    ycmd_args.append( '--stderr={0}'.format( stderr ) )
+    ycmd_args.append( f'--stdout={ stdout }' )
+    ycmd_args.append( f'--stderr={ stderr }' )
 
     self._popen_handle = SafePopen( ycmd_args,
                                     stdin_windows = subprocess.PIPE,
@@ -123,10 +124,9 @@ class Client_test:
     while True:
       try:
         if time.time() > expiration:
-          server = ( 'the {0} subserver'.format( filetype ) if filetype else
-                     'ycmd' )
-          raise RuntimeError( 'Waited for {0} to be ready for {1} seconds, '
-                              'aborting.'.format( server, timeout ) )
+          server = ( f'the { filetype } subserver' if filetype else 'ycmd' )
+          raise RuntimeError( f'Waited for { server } to be ready '
+                              f'for { timeout } seconds, aborting.' )
 
         if self._IsReady( filetype ):
           return
@@ -200,6 +200,7 @@ class Client_test:
     headers = self._ExtraHeaders( method,
                                   request_uri,
                                   data )
+
     response = requests.request( method,
                                  request_uri,
                                  headers = headers,
@@ -248,7 +249,7 @@ class Client_test:
       finally:
         for logfile in self._logfiles:
           if os.path.isfile( logfile ):
-            sys.stdout.write( 'Logfile {0}:\n\n'.format( logfile ) )
+            sys.stdout.write( f'Logfile { logfile }:\n\n' )
             sys.stdout.write( ReadFile( logfile ) )
             sys.stdout.write( '\n' )
 

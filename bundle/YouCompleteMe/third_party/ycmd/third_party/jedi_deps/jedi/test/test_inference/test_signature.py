@@ -11,21 +11,18 @@ from ..helpers import get_example_dir
 
 @pytest.mark.parametrize(
     'code, sig, names, op, version', [
-        ('import math; math.cos', 'cos(x, /)', ['x'], ge, (2, 7)),
+        ('import math; math.cos', 'cos(x, /)', ['x'], ge, (3, 6)),
 
-        ('next', 'next(iterator, default=None, /)', ['iterator', 'default'], ge, (2, 7)),
+        ('next', 'next(iterator, default=None, /)', ['iterator', 'default'], lt, (3, 12)),
+        ('next', 'next()', [], ge, (3, 12)),
 
-        ('str', "str(object='', /) -> str", ['object'], ge, (2, 7)),
+        ('str', "str(object='', /) -> str", ['object'], ge, (3, 6)),
 
-        ('pow', 'pow(x, y, z=None, /) -> number', ['x', 'y', 'z'], lt, (3, 5)),
         ('pow', 'pow(base, exp, mod=None)', ['base', 'exp', 'mod'], ge, (3, 8)),
 
-        ('bytes.partition', 'partition(self, sep, /) -> (head, sep, tail)',
-         ['self', 'sep'], lt, (3, 5)),
-        ('bytes.partition', 'partition(self, sep, /)', ['self', 'sep'], ge, (3, 5)),
+        ('bytes.partition', 'partition(self, sep, /)', ['self', 'sep'], ge, (3, 6)),
 
-        ('bytes().partition', 'partition(sep, /) -> (head, sep, tail)', ['sep'], lt, (3, 5)),
-        ('bytes().partition', 'partition(sep, /)', ['sep'], ge, (3, 5)),
+        ('bytes().partition', 'partition(sep, /)', ['sep'], ge, (3, 6)),
     ]
 )
 def test_compiled_signature(Script, environment, code, sig, names, op, version):
@@ -102,6 +99,25 @@ class X:
         (partialmethod_code + 'X().d(', None),
         (partialmethod_code + 'X.c(', 'func(a, b)'),
         (partialmethod_code + 'X.d(', None),
+
+        ('import contextlib\n@contextlib.contextmanager\ndef f(x): pass\nf(', 'f(x)'),
+
+        # typing lib
+        ('from typing import cast\ncast(', {
+            'cast(typ: object, val: Any) -> Any',
+            'cast(typ: str, val: Any) -> Any',
+            'cast(typ: Type[_T], val: Any) -> _T'}),
+        ('from typing import TypeVar\nTypeVar(',
+         'TypeVar(name: str, *constraints: Type[Any], bound: Union[None, Type[Any], str]=..., '
+         'covariant: bool=..., contravariant: bool=...)'),
+        ('from typing import List\nList(', None),
+        ('from typing import List\nList[int](', None),
+        ('from typing import Tuple\nTuple(', None),
+        ('from typing import Tuple\nTuple[int](', None),
+        ('from typing import Optional\nOptional(', None),
+        ('from typing import Optional\nOptional[int](', None),
+        ('from typing import Any\nAny(', None),
+        ('from typing import NewType\nNewType(', 'NewType(name: str, tp: Type[_T]) -> Type[_T]'),
     ]
 )
 def test_tree_signature(Script, environment, code, expected):
@@ -112,8 +128,10 @@ def test_tree_signature(Script, environment, code, expected):
     if expected is None:
         assert not Script(code).get_signatures()
     else:
-        sig, = Script(code).get_signatures()
-        assert expected == sig.to_string()
+        actual = {sig.to_string() for sig in Script(code).get_signatures()}
+        if not isinstance(expected, set):
+            expected = {expected}
+        assert expected == actual
 
 
 @pytest.mark.parametrize(
@@ -134,7 +152,7 @@ def test_tree_signature(Script, environment, code, expected):
         ('full_redirect(C)', 'z, *, c'),
         ('full_redirect(C())', 'y'),
         ('full_redirect(G)', 't: T'),
-        ('full_redirect(G[str])', 't: T'),
+        ('full_redirect(G[str])', '*args, **kwargs'),
         ('D', 'D(a, z, /)'),
         ('D()', 'D(x, y)'),
         ('D().foo', 'foo(a, *, bar, z, **kwargs)'),
@@ -175,7 +193,7 @@ def test_tree_signature(Script, environment, code, expected):
         ('no_redirect(simple)', '*args, **kwargs'),
     ]
 )
-def test_nested_signatures(Script, environment, combination, expected, skip_pre_python35):
+def test_nested_signatures(Script, environment, combination, expected):
     code = dedent('''
         def simple(a, b, *, c): ...
         def simple2(x): ...
@@ -225,32 +243,40 @@ def test_nested_signatures(Script, environment, combination, expected, skip_pre_
     assert expected == computed
 
 
-def test_pow_signature(Script):
+def test_pow_signature(Script, environment):
     # See github #1357
     sigs = Script('pow(').get_signatures()
     strings = {sig.to_string() for sig in sigs}
-    assert strings == {'pow(x: float, y: float, z: float, /) -> float',
-                       'pow(x: float, y: float, /) -> float',
-                       'pow(x: int, y: int, z: int, /) -> Any',
-                       'pow(x: int, y: int, /) -> Any'}
+    if environment.version_info < (3, 8):
+        assert strings == {'pow(base: _SupportsPow2[_E, _T_co], exp: _E, /) -> _T_co',
+                           'pow(base: _SupportsPow3[_E, _M, _T_co], exp: _E, mod: _M, /) -> _T_co',
+                           'pow(base: float, exp: float, mod: None=..., /) -> float',
+                           'pow(base: int, exp: int, mod: None=..., /) -> Any',
+                           'pow(base: int, exp: int, mod: int, /) -> int'}
+    else:
+        assert strings == {'pow(base: _SupportsPow2[_E, _T_co], exp: _E) -> _T_co',
+                           'pow(base: _SupportsPow3[_E, _M, _T_co], exp: _E, mod: _M) -> _T_co',
+                           'pow(base: float, exp: float, mod: None=...) -> float',
+                           'pow(base: int, exp: int, mod: None=...) -> Any',
+                           'pow(base: int, exp: int, mod: int) -> int'}
 
 
 @pytest.mark.parametrize(
     'code, signature', [
         [dedent('''
+            # identifier:A
             import functools
             def f(x):
                 pass
             def x(f):
                 @functools.wraps(f)
                 def wrapper(*args):
-                    # Have no arguments here, but because of wraps, the signature
-                    # should still be f's.
                     return f(*args)
                 return wrapper
 
             x(f)('''), 'f(x, /)'],
         [dedent('''
+            # identifier:B
             import functools
             def f(x):
                 pass
@@ -263,9 +289,29 @@ def test_pow_signature(Script):
                 return wrapper
 
             x(f)('''), 'f()'],
+        [dedent('''
+            # identifier:C
+            import functools
+            def f(x: int, y: float):
+                pass
+
+            @functools.wraps(f)
+            def wrapper(*args, **kwargs):
+                return f(*args, **kwargs)
+
+            wrapper('''), 'f(x: int, y: float)'],
+        [dedent('''
+            # identifier:D
+            def f(x: int, y: float):
+                pass
+
+            def wrapper(*args, **kwargs):
+                return f(*args, **kwargs)
+
+            wrapper('''), 'wrapper(x: int, y: float)'],
     ]
 )
-def test_wraps_signature(Script, code, signature, skip_pre_python35):
+def test_wraps_signature(Script, code, signature):
     sigs = Script(code).get_signatures()
     assert {sig.to_string() for sig in sigs} == {signature}
 
@@ -308,6 +354,49 @@ def test_dataclass_signature(Script, skip_pre_python37, start, start_params):
 
 
 @pytest.mark.parametrize(
+    'start, start_params', [
+        ['@define\nclass X:', []],
+        ['@frozen\nclass X:', []],
+        ['@define(eq=True)\nclass X:', []],
+        [dedent('''
+         class Y():
+             y: int
+         @define
+         class X(Y):'''), []],
+        [dedent('''
+         @define
+         class Y():
+             y: int
+             z = 5
+         @define
+         class X(Y):'''), ['y']],
+    ]
+)
+def test_attrs_signature(Script, skip_pre_python37, start, start_params):
+    has_attrs = bool(Script('import attrs').infer())
+    if not has_attrs:
+        raise pytest.skip("attrs needed in target environment to run this test")
+
+    code = dedent('''
+            name: str
+            foo = 3
+            price: float
+            quantity: int = 0.0
+
+        X(''')
+
+    # attrs exposes two namespaces
+    code = 'from attrs import define, frozen\n' + start + code
+
+    sig, = Script(code).get_signatures()
+    assert [p.name for p in sig.params] == start_params + ['name', 'price', 'quantity']
+    quantity, = sig.params[-1].infer()
+    assert quantity.name == 'int'
+    price, = sig.params[-2].infer()
+    assert price.name == 'float'
+
+
+@pytest.mark.parametrize(
     'stmt, expected', [
         ('args = 1', 'wrapped(*args, b, c)'),
         ('args = (1,)', 'wrapped(*args, c)'),
@@ -315,7 +404,7 @@ def test_dataclass_signature(Script, skip_pre_python37, start, start_params):
         ('kwargs = dict(b=3)', 'wrapped(b, /, **kwargs)'),
     ]
 )
-def test_param_resolving_to_static(Script, stmt, expected, skip_pre_python35):
+def test_param_resolving_to_static(Script, stmt, expected):
     code = dedent('''\
         def full_redirect(func):
             def wrapped(*args, **kwargs):
@@ -340,3 +429,20 @@ def test_overload(Script, code):
     x1, x2 = Script(code, path=os.path.join(dir_, 'foo.py')).get_signatures()
     assert x1.to_string() == 'with_overload(x: int, y: int) -> float'
     assert x2.to_string() == 'with_overload(x: str, y: list) -> float'
+
+
+def test_enum(Script):
+    script = Script('''\
+        from enum import Enum
+
+        class Planet(Enum):
+            MERCURY = (3.303e+23, 2.4397e6)
+            VENUS = (4.869e+24, 6.0518e6)
+
+            def __init__(self, mass, radius):
+                self.mass = mass  # in kilograms
+                self.radius = radius  # in meters
+
+        Planet.MERCURY''')
+    completion, = script.complete()
+    assert not completion.get_signatures()

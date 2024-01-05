@@ -20,7 +20,7 @@ beginning to hack:
 
 1. Python_
 2. git_
-3. XCode_ (on Mac OS X)
+3. XCode_ (on macOS)
 
 Setting up the Work Environment
 -------------------------------
@@ -40,13 +40,7 @@ Steps to setting up a clean environment:
     
 3. Linux
 
-For example Debian and Python 2.7: 
-
-.. code:: bash
-
-    $ sudo apt-get install python-pip python-virtualenv
-    
-For Python 3:
+For example Debian:
     
 .. code:: bash
 

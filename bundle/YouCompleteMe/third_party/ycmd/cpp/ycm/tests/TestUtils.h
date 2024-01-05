@@ -22,26 +22,14 @@
 #include "CodePoint.h"
 #include "Word.h"
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <gmock/gmock.h>
 #include <string>
 #include <vector>
 
 using ::testing::PrintToString;
 
-namespace fs = boost::filesystem;
-
-// A segmentation fault occurs when gtest tries to print a
-// boost::filesystem::path. Teach gtest how to print it.
-namespace boost {
-
-namespace filesystem {
-
-void PrintTo( const fs::path &path, std::ostream *os );
-
-}
-
-}
+namespace fs = std::filesystem;
 
 namespace YouCompleteMe {
 
@@ -51,33 +39,36 @@ namespace YouCompleteMe {
 //   std::vector< std::tuple< ... > > tuples{ { ... } }
 struct CodePointTuple {
   CodePointTuple()
-    : CodePointTuple( "", "", "", false, false, false, BreakProperty::OTHER ) {
+    : CodePointTuple( "", "", "", false, false, false, GraphemeBreakProperty::OTHER ) {
   }
 
   CodePointTuple( const CodePoint &code_point )
-    : CodePointTuple( code_point.Normal().c_str(),
-                      code_point.FoldedCase().c_str(),
-                      code_point.SwappedCase().c_str(),
+    : CodePointTuple( code_point.Normal(),
+                      code_point.FoldedCase(),
+                      code_point.SwappedCase(),
                       code_point.IsLetter(),
                       code_point.IsPunctuation(),
                       code_point.IsUppercase(),
-                      code_point.GetBreakProperty() ) {
+                      code_point.GetGraphemeBreakProperty(),
+                      code_point.GetIndicConjunctBreakProperty() ) {
   }
 
-  CodePointTuple( const std::string &normal,
-                  const std::string &folded_case,
-                  const std::string &swapped_case,
+  CodePointTuple( std::string_view normal,
+                  std::string_view folded_case,
+                  std::string_view swapped_case,
                   bool is_letter,
                   bool is_punctuation,
                   bool is_uppercase,
-                  BreakProperty break_property )
+                  GraphemeBreakProperty grapheme_break_property,
+                  IndicConjunctBreakProperty indic_conjunct_break_property = IndicConjunctBreakProperty::None )
     : normal_( normal ),
       folded_case_( folded_case ),
       swapped_case_( swapped_case ),
       is_letter_( is_letter ),
       is_punctuation_( is_punctuation ),
       is_uppercase_( is_uppercase ),
-      break_property_( break_property ) {
+      grapheme_break_property_( grapheme_break_property ),
+      indic_conjunct_break_property_( indic_conjunct_break_property ) {
   }
 
   bool operator== ( const CodePointTuple &other ) const {
@@ -87,7 +78,8 @@ struct CodePointTuple {
            is_letter_ == other.is_letter_ &&
            is_punctuation_ == other.is_punctuation_ &&
            is_uppercase_ == other.is_uppercase_ &&
-           break_property_ == other.break_property_;
+           grapheme_break_property_ == other.grapheme_break_property_ &&
+           indic_conjunct_break_property_ == other.indic_conjunct_break_property_;
   };
 
   std::string normal_;
@@ -96,7 +88,8 @@ struct CodePointTuple {
   bool is_letter_;
   bool is_punctuation_;
   bool is_uppercase_;
-  BreakProperty break_property_;
+  GraphemeBreakProperty grapheme_break_property_;
+  IndicConjunctBreakProperty indic_conjunct_break_property_;
 };
 
 
@@ -116,10 +109,10 @@ struct CharacterTuple {
                       character.IsUppercase() ) {
   }
 
-  CharacterTuple( const std::string &normal,
-                  const std::string &base,
-                  const std::string &folded_case,
-                  const std::string &swapped_case,
+  CharacterTuple( std::string_view normal,
+                  std::string_view base,
+                  std::string_view folded_case,
+                  std::string_view swapped_case,
                   bool is_base,
                   bool is_letter,
                   bool is_punctuation,
@@ -224,7 +217,7 @@ MATCHER_P( ContainsPointees, expected, PrintToString( expected ) ) {
 }
 
 
-fs::path PathToTestFile( const std::string &filepath );
+fs::path PathToTestFile( std::string_view filepath );
 
 } // namespace YouCompleteMe
 

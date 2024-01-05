@@ -4,11 +4,9 @@ Refactoring tests work a little bit similar to integration tests. But the idea
 is here to compare two versions of code. If you want to add a new test case,
 just look at the existing ones in the ``test/refactor`` folder and copy them.
 """
-from __future__ import with_statement
 import os
 import platform
 import re
-import sys
 
 from parso import split_lines
 
@@ -84,14 +82,12 @@ def _collect_file_tests(code, path, lines_to_execute):
 
         yield RefactoringCase(name, first, line_nr, index, path, kwargs, type_, second)
     if match is None:
-        raise Exception("Didn't match any test")
+        raise Exception(f"Didn't match any test for {path}, {code!r}")
     if match.end() != len(code):
-        raise Exception("Didn't match until the end of the file in %s" % path)
+        raise Exception(f"Didn't match until the end of the file in {path}")
 
 
 def collect_dir_tests(base_dir, test_files):
-    if sys.version_info[0] == 2:
-        return
     for f_name in os.listdir(base_dir):
         files_to_execute = [a for a in test_files.items() if a[0] in f_name]
         lines_to_execute = reduce(lambda x, y: x + y[1], files_to_execute, [])

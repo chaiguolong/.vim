@@ -1,7 +1,9 @@
-# -*- coding: utf-8 -*-
-from jedi._compatibility import is_py3
+import gc
+from pathlib import Path
+
 from jedi import parser_utils
 from parso import parse
+from parso.cache import parser_cache
 from parso.python import tree
 
 import pytest
@@ -55,10 +57,7 @@ def test_hex_values_in_docstring():
         '''
 
     doc = parser_utils.clean_scope_docstring(next(parse(source).iter_funcdefs()))
-    if is_py3:
-        assert doc == '\xff'
-    else:
-        assert doc == u'�'
+    assert doc == '\xff'
 
 
 @pytest.mark.parametrize(
@@ -68,7 +67,22 @@ def test_hex_values_in_docstring():
         ('lambda x, y, z: x + y * z\n', '<lambda>(x, y, z)')
     ])
 def test_get_signature(code, signature):
-    node = parse(code, version='3.5').children[0]
+    node = parse(code, version='3.8').children[0]
     if node.type == 'simple_stmt':
         node = node.children[0]
     assert parser_utils.get_signature(node) == signature
+
+
+def test_parser_cache_clear(Script):
+    """
+    If parso clears its cache, Jedi should not keep those resources, they
+    should be freed.
+    """
+    script = Script("a = abs\na", path=Path(__file__).parent / 'parser_cache_test_foo.py')
+    script.complete()
+    module_id = id(script._module_node)
+    del parser_cache[script._inference_state.grammar._hashed][script.path]
+    del script
+
+    gc.collect()
+    assert module_id not in [id(m) for m in gc.get_referrers(tree.Module)]

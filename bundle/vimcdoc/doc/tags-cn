@@ -4787,7 +4787,6 @@ W13	message.cnx	/*W13*
 W14	message.cnx	/*W14*
 W15	repeat.cnx	/*W15*
 W16	message.cnx	/*W16*
-W17	arabic.cnx	/*W17*
 W18	syntax.cnx	/*W18*
 WORD	motion.cnx	/*WORD*
 WWW	intro.cnx	/*WWW*
@@ -8566,12 +8565,9 @@ try-finally	eval.cnx	/*try-finally*
 try-nested	eval.cnx	/*try-nested*
 try-nesting	eval.cnx	/*try-nesting*
 tutor	usr_01.cnx	/*tutor*
-twice	if_cscop.cnx	/*twice*
 two-engines	pattern.cnx	/*two-engines*
 type()	eval.cnx	/*type()*
 type-mistakes	tips.cnx	/*type-mistakes*
-typecorr-settings	usr_41.cnx	/*typecorr-settings*
-typecorr.txt	usr_41.cnx	/*typecorr.txt*
 u	undo.cnx	/*u*
 uganda	uganda.cnx	/*uganda*
 uganda.txt	uganda.cnx	/*uganda.txt*

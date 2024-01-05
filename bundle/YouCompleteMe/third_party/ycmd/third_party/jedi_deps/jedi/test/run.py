@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 |jedi| is mostly being tested by what I would call "integration tests". These
 tests are testing type inference with the public API. This makes a
@@ -104,9 +104,14 @@ import os
 import re
 import sys
 import operator
-from ast import literal_eval
+if sys.version_info < (3, 8):
+    literal_eval = eval
+else:
+    from ast import literal_eval
 from io import StringIO
 from functools import reduce
+from unittest.mock import ANY
+from pathlib import Path
 
 import parso
 from _pytest.outcomes import Skipped
@@ -114,7 +119,6 @@ import pytest
 
 import jedi
 from jedi import debug
-from jedi._compatibility import unicode, is_py3
 from jedi.api.classes import Name
 from jedi.api.completion import get_user_context
 from jedi import parser_utils
@@ -122,6 +126,7 @@ from jedi.api.environment import get_default_environment, get_system_environment
 from jedi.inference.gradual.conversion import convert_values
 from jedi.inference.analysis import Warning
 
+test_dir = Path(__file__).absolute().parent
 
 TEST_COMPLETIONS = 0
 TEST_INFERENCE = 1
@@ -165,7 +170,7 @@ class BaseTestCase(object):
 class IntegrationTestCase(BaseTestCase):
     def __init__(self, test_type, correct, line_nr, column, start, line,
                  path=None, skip_version_info=None):
-        super(IntegrationTestCase, self).__init__(skip_version_info)
+        super().__init__(skip_version_info)
         self.test_type = test_type
         self.correct = correct
         self.line_nr = line_nr
@@ -173,6 +178,7 @@ class IntegrationTestCase(BaseTestCase):
         self.start = start
         self.line = line
         self.path = path
+        self._project = jedi.Project(test_dir)
 
     @property
     def module_name(self):
@@ -188,7 +194,12 @@ class IntegrationTestCase(BaseTestCase):
                                    self.line_nr_test, self.line.rstrip())
 
     def script(self, environment):
-        return jedi.Script(self.source, path=self.path, environment=environment)
+        return jedi.Script(
+            self.source,
+            path=self.path,
+            environment=environment,
+            project=self._project
+        )
 
     def run(self, compare_cb, environment=None):
         testers = {
@@ -198,7 +209,7 @@ class IntegrationTestCase(BaseTestCase):
             TEST_REFERENCES: self.run_get_references,
         }
         if (self.path.endswith('pytest.py') or self.path.endswith('conftest.py')) \
-                and environment.executable != os.path.realpath(sys.executable):
+                and os.path.realpath(environment.executable) != os.path.realpath(sys.executable):
             # It's not guarantueed that pytest is installed in test
             # environments, if we're not running in the same environment that
             # we're already in, so just skip that case.
@@ -210,6 +221,9 @@ class IntegrationTestCase(BaseTestCase):
         # import cProfile; cProfile.run('...')
 
         comp_str = {c.name for c in completions}
+        for r in completions:
+            # Test if this access raises an error
+            assert isinstance(r.type, str)
         return compare_cb(self, comp_str, set(literal_eval(self.correct)))
 
     def run_inference(self, compare_cb, environment):
@@ -245,6 +259,9 @@ class IntegrationTestCase(BaseTestCase):
         should = definition(self.correct, self.start, script.path)
         result = script.infer(self.line_nr, self.column)
         is_str = set(comparison(r) for r in result)
+        for r in result:
+            # Test if this access raises an error
+            assert isinstance(r.type, str)
         return compare_cb(self, is_str, should)
 
     def run_goto(self, compare_cb, environment):
@@ -257,7 +274,7 @@ class IntegrationTestCase(BaseTestCase):
         self.correct = self.correct.strip()
         compare = sorted(
             (('stub:' if r.is_stub() else '')
-             + re.sub(r'^test\.completion\.', '', r.module_name),
+             + re.sub(r'^completion\.', '', r.module_name),
              r.line,
              r.column)
             for r in result
@@ -270,6 +287,8 @@ class IntegrationTestCase(BaseTestCase):
         for pos_tup in positions:
             if type(pos_tup[0]) == str:
                 # this means that there is a module specified
+                if pos_tup[1] == ...:
+                    pos_tup = pos_tup[0], ANY, pos_tup[2]
                 wanted.append(pos_tup)
             else:
                 line = pos_tup[0]
@@ -295,7 +314,7 @@ class StaticAnalysisCase(BaseTestCase):
         for line in self._source.splitlines():
             skip_version_info = skip_python_version(line) or skip_version_info
 
-        super(StaticAnalysisCase, self).__init__(skip_version_info)
+        super().__init__(skip_version_info)
 
     def collect_comparison(self):
         cases = []
@@ -401,12 +420,8 @@ def collect_dir_tests(base_dir, test_files, check_thirdparty=False):
 
             path = os.path.join(base_dir, f_name)
 
-            if is_py3:
-                with open(path, encoding='utf-8', newline='') as f:
-                    source = f.read()
-            else:
-                with open(path) as f:
-                    source = unicode(f.read(), 'UTF-8')
+            with open(path, newline='') as f:
+                source = f.read()
 
             for case in collect_file_tests(path, StringIO(source),
                                            lines_to_execute):
@@ -431,7 +446,7 @@ Options:
     --pdb           Enable pdb debugging on fail.
     -d, --debug     Enable text output debugging (please install ``colorama``).
     --thirdparty    Also run thirdparty tests (in ``completion/thirdparty``).
-    --env <dotted>  A Python version, like 2.7, 3.8, etc.
+    --env <dotted>  A Python version, like 3.9, 3.8, etc.
 """
 if __name__ == '__main__':
     import docopt

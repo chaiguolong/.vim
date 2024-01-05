@@ -3,13 +3,17 @@ parso - A Python Parser
 ###################################################################
 
 
-.. image:: https://travis-ci.org/davidhalter/parso.svg?branch=master
-    :target: https://travis-ci.org/davidhalter/parso
-    :alt: Travis CI build status
+.. image:: https://github.com/davidhalter/parso/workflows/Build/badge.svg?branch=master
+    :target: https://github.com/davidhalter/parso/actions
+    :alt: GitHub Actions build status
 
 .. image:: https://coveralls.io/repos/github/davidhalter/parso/badge.svg?branch=master
     :target: https://coveralls.io/github/davidhalter/parso?branch=master
     :alt: Coverage Status
+
+.. image:: https://pepy.tech/badge/parso
+    :target: https://pepy.tech/project/parso
+    :alt: PyPI Downloads
 
 .. image:: https://raw.githubusercontent.com/davidhalter/parso/master/docs/_static/logo_characters.png
 
@@ -27,7 +31,7 @@ A simple example:
 .. code-block:: python
 
     >>> import parso
-    >>> module = parso.parse('hello + 1', version="3.6")
+    >>> module = parso.parse('hello + 1', version="3.9")
     >>> expr = module.children[0]
     >>> expr
     PythonNode(arith_expr, [<Name: hello@1,0>, <Operator: +>, <Number: 1>])

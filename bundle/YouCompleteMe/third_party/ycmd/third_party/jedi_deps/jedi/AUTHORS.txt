@@ -1,4 +1,4 @@
-﻿Main Authors
+Main Authors
 ------------
 
 - David Halter (@davidhalter) <davidhalter88@gmail.com>
@@ -56,6 +56,13 @@ Code Contributors
 - Shane Steinert-Threlkeld (@shanest) <ssshanest@gmail.com>
 - Tim Gates (@timgates42) <tim.gates@iress.com>
 - Lior Goldberg (@goldberglior)
+- Ryan Clary (@mrclary)
+- Max Mäusezahl (@mmaeusezahl) <maxmaeusezahl@googlemail.com>
+- Vladislav Serebrennikov (@endilll)
+- Andrii Kolomoiets (@muffinmad)
+- Leo Ryu (@Leo-Ryu)
+- Joseph Birkner (@josephbirkner)
+- Márcio Mazza (@marciomazza)
 
 And a few more "anonymous" contributors.
 

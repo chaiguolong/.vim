@@ -242,8 +242,6 @@ def x():
 # yield from
 # -----------------
 
-# python > 2.7
-
 def yield_from():
     yield from iter([1])
 
@@ -292,3 +290,27 @@ def test_in_brackets():
     x = yield from [1]
     #? None
     x
+
+
+# -----------------
+# Annotations
+# -----------------
+
+from typing import Iterator
+
+def annotation1() -> float:
+    yield 1
+
+def annotation2() -> Iterator[float]:
+    yield 1
+
+
+#?
+next(annotation1())
+#? float()
+next(annotation2())
+
+
+# annotations should override generator inference
+#? float()
+annotation1()

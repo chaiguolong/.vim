@@ -24,9 +24,9 @@ YCM_EXTRA_CONF_FILENAME = '.ycm_extra_conf.py'
 CONFIRM_CONF_FILE_MESSAGE = ( 'Found {0}. Load? \n\n(Question can be turned '
                               'off with options, see YCM docs)' )
 
-NO_EXTRA_CONF_FILENAME_MESSAGE = ( 'No {0} file detected, so no compile flags '
-  'are available. Thus no semantic support for C/C++/ObjC/ObjC++. Go READ THE '
-  'DOCS *NOW*, DON\'T file a bug report.' ).format( YCM_EXTRA_CONF_FILENAME )
+NO_EXTRA_CONF_FILENAME_MESSAGE = ( f'No { YCM_EXTRA_CONF_FILENAME } file '
+  'detected, so no compile flags are available. Thus no semantic support for '
+  'C/C++/ObjC/ObjC++. Go READ THE ' 'DOCS *NOW*, DON\'T file a bug report.' )
 
 NO_DIAGNOSTIC_SUPPORT_MESSAGE = ( 'YCM has no diagnostics support for this '
   'filetype; refer to Syntastic docs if using Syntastic.' )
@@ -67,19 +67,26 @@ class NoDiagnosticSupport( ServerError ):
 
 
 # column_num is a byte offset
-def BuildGoToResponse( filepath, line_num, column_num, description = None ):
+def BuildGoToResponse( filepath,
+                       line_num,
+                       column_num,
+                       description = None,
+                       file_only = False ):
   return BuildGoToResponseFromLocation(
     Location( line = line_num,
               column = column_num,
               filename = filepath ),
-    description )
+    description, file_only )
 
 
-def BuildGoToResponseFromLocation( location, description = None ):
+def BuildGoToResponseFromLocation( location,
+                                   description = None,
+                                   file_only = False ):
   """Build a GoTo response from a responses.Location object."""
   response = BuildLocationData( location )
   if description:
     response[ 'description' ] = description
+  response[ 'file_only' ] = file_only
   return response
 
 
@@ -96,8 +103,8 @@ def BuildDisplayMessageResponse( text ):
 
 
 def BuildDetailedInfoResponse( text ):
-  """ Returns the response object for displaying detailed information about types
-  and usage, such as within a preview window"""
+  """ Returns the response object for displaying detailed information about
+  types and usage, such as within a preview window"""
   return {
     'detailed_info': text
   }
@@ -137,10 +144,31 @@ def BuildCompletionResponse( completions,
   }
 
 
+def BuildResolveCompletionResponse( completion, errors ):
+  return {
+    'completion': completion,
+    'errors': errors if errors else [],
+  }
+
+
 def BuildSignatureHelpResponse( signature_info, errors = None ):
   return {
     'signature_help':
       signature_info if signature_info else EMPTY_SIGNATURE_INFO,
+    'errors': errors if errors else [],
+  }
+
+
+def BuildSemanticTokensResponse( semantic_tokens, errors = None ):
+  return {
+    'semantic_tokens': semantic_tokens if semantic_tokens else {},
+    'errors': errors if errors else [],
+  }
+
+
+def BuildInlayHintsResponse( inlay_hints, errors = None ):
+  return {
+    'inlay_hints': inlay_hints if inlay_hints else [],
     'errors': errors if errors else [],
   }
 
@@ -179,56 +207,23 @@ class Diagnostic:
 
 
 class UnresolvedFixIt:
-  def __init__( self, command, text ):
+  def __init__( self, command, text, kind = None ):
     self.command = command
     self.text = text
     self.resolve = True
-
-
-class FixIt:
-  """A set of replacements (of type FixItChunk) to be applied to fix a single
-  diagnostic. This can be used for any type of refactoring command, not just
-  quick fixes. The individual chunks may span multiple files.
-
-  NOTE: All offsets supplied in both |location| and (the members of) |chunks|
-  must be byte offsets into the UTF-8 encoded version of the appropriate
-  buffer.
-  """
-  def __init__( self, location, chunks, text = '' ):
-    """location of type Location, chunks of type list<FixItChunk>"""
-    self.location = location
-    self.chunks = chunks
-    self.text = text
-
-
-class FixItChunk:
-  """An individual replacement within a FixIt (aka Refactor)"""
-
-  def __init__( self, replacement_text, range ):
-    """replacement_text of type string, range of type Range"""
-    self.replacement_text = replacement_text
-    self.range = range
-
-
-class Range:
-  """Source code range relating to a diagnostic or FixIt (aka Refactor)."""
-
-  def __init__( self, start, end ):
-    "start of type Location, end of type Location"""
-    self.start_ = start
-    self.end_ = end
+    self.kind = kind
 
 
 class Location:
   """Source code location for a diagnostic or FixIt (aka Refactor)."""
 
-  def __init__( self, line, column, filename ):
+  def __init__( self, line: int, column: int, filename: str ):
     """Line is 1-based line, column is 1-based column byte offset, filename is
     absolute path of the file"""
     self.line_number_ = line
     self.column_number_ = column
     if filename:
-      self.filename_ = os.path.realpath( filename )
+      self.filename_ = os.path.abspath( filename )
     else:
       # When the filename passed (e.g. by a server) can't be recognized or
       # parsed, we send an empty filename. This at least allows the client to
@@ -240,6 +235,46 @@ class Location:
       # strict breach of our own protocol. Perhaps completers should be required
       # to simply skip such a location.
       self.filename_ = filename
+
+
+class Range:
+  """Source code range relating to a diagnostic or FixIt (aka Refactor)."""
+
+  def __init__( self, start: Location, end: Location ):
+    "start of type Location, end of type Location"""
+    self.start_ = start
+    self.end_ = end
+
+
+class FixIt:
+  """A set of replacements (of type FixItChunk) to be applied to fix a single
+  diagnostic. This can be used for any type of refactoring command, not just
+  quick fixes. The individual chunks may span multiple files.
+
+  NOTE: All offsets supplied in both |location| and (the members of) |chunks|
+  must be byte offsets into the UTF-8 encoded version of the appropriate
+  buffer.
+  """
+  class Kind:
+    """These are LSP kinds that we use outside of LSP completers."""
+    REFACTOR = 'refactor'
+
+
+  def __init__( self, location: Location, chunks, text = '', kind = None ):
+    """location of type Location, chunks of type list<FixItChunk>"""
+    self.location = location
+    self.chunks = chunks
+    self.text = text
+    self.kind = kind
+
+
+class FixItChunk:
+  """An individual replacement within a FixIt (aka Refactor)"""
+
+  def __init__( self, replacement_text: str, range: Range ):
+    """replacement_text of type string, range of type Range"""
+    self.replacement_text = replacement_text
+    self.range = range
 
 
 def BuildDiagnosticData( diagnostic ):
@@ -287,18 +322,25 @@ def BuildFixItResponse( fixits ):
 
   def BuildFixItData( fixit ):
     if hasattr( fixit, 'resolve' ):
-      return {
+      result = {
         'command': fixit.command,
         'text': fixit.text,
+        'kind': fixit.kind,
         'resolve': fixit.resolve
       }
     else:
-      return {
+      result = {
         'location': BuildLocationData( fixit.location ),
         'chunks' : [ BuildFixitChunkData( x ) for x in fixit.chunks ],
         'text': fixit.text,
+        'kind': fixit.kind,
         'resolve': False
       }
+
+    if result[ 'kind' ] is None:
+      result.pop( 'kind' )
+
+    return result
 
   return {
     'fixits' : [ BuildFixItData( x ) for x in fixits ]

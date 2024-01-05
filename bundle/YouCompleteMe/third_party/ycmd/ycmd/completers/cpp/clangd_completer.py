@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 ycmd contributors
+# Copyright (C) 2018-2021 ycmd contributors
 #
 # This file is part of ycmd.
 #
@@ -34,7 +34,11 @@ from ycmd.utils import ( CLANG_RESOURCE_DIR,
                          PathsToAllParentFolders,
                          re )
 
-MIN_SUPPORTED_VERSION = ( 10, 0, 0 )
+# NOTES: We currently bundle 17.0.1, but as this is very new, we still allow the
+# use of earlier version to avoid breaking users who have set
+# g:ycm_clangd_binary_path. In general, we should only update this if we make
+# changes to this CLangdCompleter that would not be backward compatible.
+MIN_SUPPORTED_VERSION = ( 13, 0, 0 )
 INCLUDE_REGEX = re.compile(
   '(\\s*#\\s*(?:include|import)\\s*)(?:"[^"]*|<[^>]*)' )
 NOT_CACHED = 'NOT_CACHED'
@@ -164,7 +168,7 @@ def GetClangdCommand( user_options ):
 def ShouldEnableClangdCompleter( user_options ):
   """Checks whether clangd should be enabled or not.
 
-  - Returns True iff an up-to-date binary exists either in `clangd_binary_path`
+  - Returns True if an up-to-date binary exists either in `clangd_binary_path`
     or in third party folder and `use_clangd` is not set to `0`.
   """
   # User disabled clangd explicitly.
@@ -297,12 +301,39 @@ class ClangdCompleter( language_server_completer.LanguageServerCompleter ):
       'GetDocImprecise': (
         lambda self, request_data, args: self.GetDoc( request_data )
       ),
+      'GoToAlternateFile': (
+        lambda self, request_data, args: self.GoToAlternateFile( request_data )
+      ),
       # To handle the commands below we need extensions to LSP. One way to
       # provide those could be to use workspace/executeCommand requset.
       # 'GetParent': (
       #   lambda self, request_data, args: self.GetType( request_data )
       # )
     }
+
+
+  def GoToAlternateFile( self, request_data ):
+    if not self.ServerIsReady():
+      raise RuntimeError( 'Server is initializing. Please wait.' )
+
+    request_id = self.GetConnection().NextRequestId()
+    uri = lsp.FilePathToUri( request_data[ 'filepath' ] )
+    request  = lsp.BuildRequest( request_id,
+                                 "textDocument/switchSourceHeader",
+                                 { "uri": uri } )
+    response = self.GetConnection().GetResponse(
+            request_id,
+            request,
+            language_server_completer.REQUEST_TIMEOUT_COMMAND )
+    filepath = lsp.UriToFilePath( response[ 'result' ] )
+    # We don't have a specific location in the file we need to go to so
+    # we just arbitrarily choose line 1, column 1. The client can choose
+    # to ignore them.
+    return responses.BuildGoToResponse( filepath,
+                                        1,
+                                        1,
+                                        description = filepath,
+                                        file_only = True )
 
 
   def ShouldCompleteIncludeStatement( self, request_data ):
@@ -394,15 +425,6 @@ class ClangdCompleter( language_server_completer.LanguageServerCompleter ):
         'Compilation Command',
         self._compilation_commands.get( request_data[ 'filepath' ], False ) )
     ]
-
-
-  def OnBufferVisit( self, request_data ):
-    # In case a header has been changed, we need to make clangd reparse the TU.
-    file_state = self._server_file_state[ request_data[ 'filepath' ] ]
-    if file_state.state == lsp.ServerFileState.OPEN:
-      msg = lsp.DidChangeTextDocument( file_state, None )
-      self.GetConnection().SendNotification( msg )
-
 
 
 def CompilationDatabaseExists( file_dir ):

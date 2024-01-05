@@ -39,7 +39,7 @@ tests][test-setup].**
 
 This is all for Ubuntu Linux. Details on getting ycmd running on other OS's can
 be found in [YCM's instructions][ycm-install] (ignore the Vim-specific parts).
-Note that **ycmd runs on Python 3.5.1+.**
+Note that **ycmd runs on Python 3.8.0+.**
 
 First, install the minimal dependencies:
 ```
@@ -66,9 +66,9 @@ instructions][ycm-install] (ignore the Vim-specific parts).
 Supported compilers
 -------------------
 
-- GCC 4.8 and later
-- Clang 3.3 and later
-- Microsoft Visual Studio 2015 Update 3 and later
+- GCC 8 and later
+- Clang 7 and later
+- Microsoft Visual Studio 2017 v 15.7 and later
 
 API notes
 ---------
@@ -95,15 +95,14 @@ provided in the completion request, other files of the same filetype that were
 provided previously and any tags files produced by ctags. This engine is
 non-semantic.
 
-There are also several semantic engines in YCM. There's a libclang-based
-completer and [clangd][clangd]-based completer that both provide semantic
-completion for C-family languages. [clangd][clangd] support is currently
-**experimental** and changes in the near future might break backwards
-compatibility. There's also a Jedi-based completer for semantic completion for
-Python, an OmniSharp-based completer for C#, a [gopls][gopls]-based completer
-for Go (using [gopls][gopls] for jumping to definitions), a TSServer-based
-completer for JavaScript and TypeScript, a [jdt.ls][jdtls]-based server for
-Java, and a [RLS][]-based completer for Rust. More will be added with time.
+There are also several semantic engines in YCM. There's [clangd][clangd]-based
+completer that both provide semantic completion for C-family languages.
+There's also a Jedi-based completer for semantic completion for Python, an
+OmniSharp-based completer for C#, a [gopls][gopls]-based completer for Go
+(using [gopls][gopls] for jumping to definitions), a TSServer-based completer
+for JavaScript and TypeScript, a [jdt.ls][jdtls]-based server for Java, and a
+[RLS][]-based completer for Rust.  More will be added with time.
+
 
 There are also other completion engines, like the filepath completer (part of
 the identifier completer).
@@ -256,12 +255,19 @@ returned from `Settings` under the `ls` key. The python dictionary is converted
 to json and included verbatim in the LSP initialize request. In order to
 determine the set of options for a server, consult the server's documentation or
 `package.json` file.
+A `config_sections` object is a dictionary whose keys are "sections" and values
+are pieces of settings (usually found in the `ls` object) corresponding to
+those sections. This is even more underspecified and requires trial and error
+to make it work. It is optional and only useful if you explicitly enable
+`workspace/configuration` support.
 
 Example of LSP configuration:
 ```python
 def Settings( **kwargs ):
   if kwargs[ 'language' ] == 'java':
-    return { 'ls': { 'java.rename.enabled' : False } }
+    return { 'ls': { 'java.rename.enabled' : False },
+             # `config_sections` is not used for java...
+             'config_sections': { 'section0': {} }
 ```
 
 In addition, ycmd can use any language server, given a file type and a command
@@ -270,8 +276,18 @@ wouldn't usually know about. The value is a list of dictionaries containing:
 
 - `name`: the string representing the name of the server
 - `cmdline`: the list representing the command line to execute the server
+  (optional; mandatory if port not specified)
+- `port`: optional. If specified, a TCP connection is used to this port. If set
+  to `*`, an unused locall port is selected and made availble in the `cmdline`
+  as `${port}` (see below examples).
 - `filetypes`: list of supported filetypes.
 - `project_root_files`: Tells ycmd which files indicate project root.
+- `capabilities'`: Overrides the default LSP capabilities of ycmd.
+  - If you enable `workspace/configuration` support, check the extra conf
+    details, relevant to LSP servers.
+- `triggerCharacters`: Override the LSP server's trigger characters for
+  completion. This can be useful when the server obnoxiously requests completion
+  on every character or for example on whitespace characters.
 
 ```json
 {
@@ -279,15 +295,45 @@ wouldn't usually know about. The value is a list of dictionaries containing:
     "name": "gopls",
     "cmdline": [ "/path/to/gopls", "-rpc.trace" ],
     "filetypes": [ "go" ],
-    "project_root_files": [ "go.mod" ]
+    "project_root_files": [ "go.mod" ],
+    "triggerCharacters": [ "." ]
   } ]
 }
 ```
 
+Or, to use a TCP connection:
+
+```json
+{
+  "language_server": [ {
+    "name": "godot",
+    "port": "6008",
+    "filetypes": [ "gdscript" ]
+  } ]
+}
+```
+
+Or, to use an unused  local port, set `port` to `*` and use `${port}` in the
+`cmdline`:
+
+```json
+{
+  "language_server": [ {
+    "name": "someserver",
+    "cmdline": [ "/path/to/some/server", "--port", "${port}" ],
+    "port": "*",
+    "filetypes": [ "somethign" ],
+    "project_root_files": [ "somethingfile" ]
+  } ]
+}
+```
+
+
 When plugging in a completer in this way, the `kwargs[ 'language' ]` will be set
 to the value of the `name` key, i.e. `gopls` in the above example.
 
-LSP completers currently supported without `language_server`:
+A number of LSP completers are currently supported without `language_server`,
+usch as:
 
 - Java
 - Rust
@@ -300,6 +346,9 @@ One can also override the root directory, with `project_directory`.
 def Settings( **kwargs ):
   return { 'project_directory': 'src/' } # The path may be absolute as well.
 ```
+
+Note: If an LSP based completer is configured for a language that's supported
+"built-in", it overrides the built-in support.
 
 ##### C-family settings
 
@@ -341,11 +390,18 @@ def Settings( **kwargs ):
   }
 ```
 
-##### Java settings
+##### Formatting settings
 
-[The java subserver][jdtls] allows [formatter configuration][jdt-formatter],
-but it expects the configuration to be supplied in a different way than the rest.
-For this purpose the `Settings` function can return a `formatter` property.
+The configuration for `Format` subcommand can be specified with an extra conf for
+[the java subserver][jdtls] and for the typescript subserver.
+The formatter options can be found below:
+
+- [Java configuration][jdt-formatter]
+- [TSServer configuration][ts-formatter],
+
+These servers support custom formatting options to be supplied in a different
+way than the rest.  For this purpose the `Settings` function can return a
+`formatter` property.
 
 An example of the formatter configuration would be:
 
@@ -497,7 +553,9 @@ This software is licensed under the [GPL v3 license][gpl].
 [nano-ycmd]: https://github.com/orsonteodoro/nano-ycmd
 [jdtls]: https://github.com/eclipse/eclipse.jdt.ls
 [jdt-formatter]: https://github.com/eclipse/eclipse.jdt.ls/blob/master/org.eclipse.jdt.ls.core/.settings/org.eclipse.jdt.core.prefs
+[ts-formatter]: https://github.com/Microsoft/TypeScript/blob/master/lib/protocol.d.ts#L2384-L2421
 [api-docs]: https://ycm-core.github.io/ycmd/
 [ycmd-extra-conf]: https://github.com/ycm-core/ycmd/blob/master/.ycm_extra_conf.py
 [clangd]: https://clang.llvm.org/extra/clangd.html
+[gopls]: https://github.com/golang/tools/
 [RLS]: https://github.com/rust-lang-nursery/rls

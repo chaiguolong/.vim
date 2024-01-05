@@ -17,14 +17,18 @@
 
 import logging
 import os
-import requests
+import urllib.request
+import urllib.error
+import json
 import threading
 
 from subprocess import PIPE
 from ycmd import utils, responses
 from ycmd.completers.completer import Completer
 from ycmd.completers.completer_utils import GetFileLines
-from ycmd.utils import LOGGER
+from ycmd.utils import LOGGER, ToBytes, ToUnicode
+
+HTTP_OK = 200
 
 PATH_TO_TERN_BINARY = os.path.abspath(
   os.path.join(
@@ -50,11 +54,15 @@ SERVER_HOST = '127.0.0.1'
 LOGFILE_FORMAT = 'tern_{port}_{std}_'
 
 
-def ShouldEnableTernCompleter():
+def ShouldEnableTernCompleter( user_options ):
   """Returns whether or not the tern completer is 'installed'. That is whether
   or not the tern submodule has a 'node_modules' directory. This is pretty much
   the only way we can know if the user added '--js-completer' on
   install or manually ran 'npm install' in the tern submodule directory."""
+
+  if user_options.get( 'disable_tern' ):
+    LOGGER.info( 'Not using Tern completer: disabled by user' )
+    return False
 
   if not PATH_TO_NODE:
     LOGGER.warning( 'Not using Tern completer: unable to find node' )
@@ -286,9 +294,9 @@ class TernCompleter( Completer ):
 
     try:
       target = self._GetServerAddress() + '/ping'
-      response = requests.get( target )
-      return response.status_code == requests.codes.ok
-    except requests.ConnectionError:
+      with urllib.request.urlopen( target ) as response:
+        return response.code == HTTP_OK
+    except urllib.error.URLError:
       return False
 
 
@@ -320,14 +328,18 @@ class TernCompleter( Completer ):
                  if 'javascript' in file_data[ x ][ 'filetypes' ] ],
     }
     full_request.update( request )
+    try:
+      response = urllib.request.urlopen(
+        self._GetServerAddress(),
+        data = ToBytes( json.dumps( full_request ) ) )
 
-    response = requests.post( self._GetServerAddress(),
-                              json = full_request )
-
-    if response.status_code != requests.codes.ok:
-      raise RuntimeError( response.text )
-
-    return response.json()
+      json_response = json.loads( response.read() )
+      response.close()
+      return json_response
+    except urllib.error.HTTPError as response:
+      exception = ToUnicode( response.fp.read() )
+      response.close()
+      raise RuntimeError( exception )
 
 
   def _GetResponse( self, query, codepoint, request_data ):
@@ -514,7 +526,7 @@ class TernCompleter( Completer ):
   def _GetDoc( self, request_data ):
     # Note: we use the 'type' request because this is the best
     # way to get the name, type and doc string. The 'documentation' request
-    # doesn't return the 'name' (strangely), wheras the 'type' request returns
+    # doesn't return the 'name' (strangely), whereas the 'type' request returns
     # the same docs with extra info.
     query = {
       'type':      'type',

@@ -16,7 +16,7 @@ Jedi's main API calls and features are:
 Basic Features
 --------------
 
-- Python 2.7 and 3.5+ support
+- Python 3.6+ support
 - Ignores syntax errors and wrong indentation
 - Can deal with complex module / function / class structures
 - Great ``virtualenv``/``venv`` support
@@ -57,7 +57,7 @@ Supported Python Features
 Limitations
 -----------
 
-In general Jedi's limit are quite high, but for very big projects or very
+In general Jedi's limit is quite high, but for very big projects or very
 complex code, sometimes Jedi intentionally stops type inference, to avoid
 hanging for a long time.
 
@@ -77,7 +77,7 @@ Performance Issues
 
 Importing ``numpy`` can be quite slow sometimes, as well as loading the
 builtins the first time. If you want to speed things up, you could preload
-libriaries in |jedi|, with :func:`.preload_module`. However, once loaded, this
+libraries in |jedi|, with :func:`.preload_module`. However, once loaded, this
 should not be a problem anymore.  The same is true for huge modules like
 ``PySide``, ``wx``, ``tensorflow``, ``pandas``, etc.
 

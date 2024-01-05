@@ -24,7 +24,8 @@ from urllib.request import pathname2url, url2pathname
 
 from ycmd.utils import ( ByteOffsetToCodepointOffset,
                          ToBytes,
-                         ToUnicode )
+                         ToUnicode,
+                         UpdateDict )
 
 
 Error = collections.namedtuple( 'RequestError', [ 'code', 'reason' ] )
@@ -105,6 +106,70 @@ FILE_EVENT_KIND = {
   'modify': 2,
   'delete': 3
 }
+
+SYMBOL_KIND = [
+  None,
+  'File',
+  'Module',
+  'Namespace',
+  'Package',
+  'Class',
+  'Method',
+  'Property',
+  'Field',
+  'Constructor',
+  'Enum',
+  'Interface',
+  'Function',
+  'Variable',
+  'Constant',
+  'String',
+  'Number',
+  'Boolean',
+  'Array',
+  'Object',
+  'Key',
+  'Null',
+  'EnumMember',
+  'Struct',
+  'Event',
+  'Operator',
+  'TypeParameter',
+]
+
+TOKEN_TYPES = [
+  'namespace',
+  'type',
+  'class',
+  'enum',
+  'interface',
+  'struct',
+  'typeParameter',
+  'parameter',
+  'variable',
+  'property',
+  'enumMember',
+  'event',
+  'function',
+  'method',
+  'member',
+  'macro',
+  'keyword',
+  'modifier',
+  'comment',
+  'string',
+  'number',
+  'regexp',
+  'operator',
+]
+
+TOKEN_MODIFIERS = []
+
+INLAY_HINT_KIND = [
+  None,
+  "Type",
+  "Parameter"
+]
 
 
 class InvalidUriException( Exception ):
@@ -229,72 +294,116 @@ def BuildResponse( request, parameters ):
   return _BuildMessageData( message )
 
 
-def Initialize( request_id, project_directory, settings ):
+def Initialize( request_id, project_directory, extra_capabilities, settings ):
   """Build the Language Server initialize request"""
 
+  capabilities = {
+    'workspace': {
+      'applyEdit': True,
+      'didChangeWatchedFiles': {
+        'dynamicRegistration': True
+      },
+      'workspaceEdit': { 'documentChanges': True, },
+      'symbol': {
+        'symbolKind': {
+          'valueSet': list( range( 1, len( SYMBOL_KIND ) ) ),
+        }
+      },
+      'workspaceFolders': True,
+    },
+    'textDocument': {
+      'codeAction': {
+        'codeActionLiteralSupport': {
+          'codeActionKind': {
+            'valueSet': [ '',
+                          'quickfix',
+                          'refactor',
+                          'refactor.extract',
+                          'refactor.inline',
+                          'refactor.rewrite',
+                          'source',
+                          'source.organizeImports' ]
+          }
+        }
+      },
+      'completion': {
+        'completionItemKind': {
+          # ITEM_KIND list is 1-based.
+          # valueSet is a list of the indices of items supported
+          'valueSet': list( range( 1, len( ITEM_KIND ) ) ),
+        },
+        'completionItem': {
+          'documentationFormat': [
+            'plaintext',
+            'markdown'
+          ],
+          # Buggy servers (jdt.ls) now require this to be set even though it's
+          # the historical default
+          'resolveSupport': {
+            'properties': [ 'documentation', 'detail' ]
+          },
+        },
+      },
+      'documentSymbol': {
+        'symbolKind': {
+          'valueSet': list( range( 1, len( SYMBOL_KIND ) ) ),
+        },
+        'hierarchicalDocumentSymbolSupport': False,
+        'labelSupport': False,
+      },
+      'hover': {
+        'contentFormat': [
+          'plaintext',
+          'markdown'
+        ]
+      },
+      'signatureHelp': {
+        'signatureInformation': {
+          'parameterInformation': {
+            'labelOffsetSupport': True,
+          },
+          'documentationFormat': [
+            'plaintext',
+            'markdown'
+          ],
+        },
+      },
+      'semanticTokens': {
+        'requests': {
+          'range': True,
+          'full': {
+            'delta': False
+          }
+        },
+        'tokenTypes': TOKEN_TYPES,
+        'tokenModifiers': TOKEN_MODIFIERS,
+        'formats': [ 'relative' ],
+        'augmentSyntaxTokens': True,
+      },
+      'synchronization': {
+        'didSave': True
+      },
+      'inlay_hint': {
+      }
+    },
+  }
   return BuildRequest( request_id, 'initialize', {
     'processId': os.getpid(),
     'rootPath': project_directory,
     'rootUri': FilePathToUri( project_directory ),
     'initializationOptions': settings,
-    'capabilities': {
-      'workspace': {
-        'applyEdit': True,
-        'didChangeWatchedFiles': {
-          'dynamicRegistration': True
-        },
-        'documentChanges': True
-      },
-      'textDocument': {
-        'codeAction': {
-          'codeActionLiteralSupport': {
-            'codeActionKind': {
-              'valueSet': [ '',
-                            'quickfix',
-                            'refactor',
-                            'refactor.extract',
-                            'refactor.inline',
-                            'refactor.rewrite',
-                            'source',
-                            'source.organizeImports' ]
-            }
-          }
-        },
-        'completion': {
-          'completionItemKind': {
-            # ITEM_KIND list is 1-based.
-            'valueSet': list( range( 1, len( ITEM_KIND ) ) ),
-          },
-          'completionItem': {
-            'documentationFormat': [
-              'plaintext',
-              'markdown'
-            ],
-          },
-        },
-        'hover': {
-          'contentFormat': [
-            'plaintext',
-            'markdown'
-          ]
-        },
-        'signatureHelp': {
-          'signatureInformation': {
-            'parameterInformation': {
-              'labelOffsetSupport': False, # For now.
-            },
-            'documentationFormat': [
-              'plaintext',
-              'markdown'
-            ],
-          },
-        },
-        'synchronization': {
-          'didSave': True
-        },
-      },
-    },
+    'capabilities': UpdateDict( capabilities, extra_capabilities ),
+    'workspaceFolders': WorkspaceFolders( project_directory ),
   } )
+
+
+def WorkspaceFolders( *args ):
+  return [
+    {
+      'uri': FilePathToUri( f ),
+      'name': os.path.basename( f )
+    } for f in args
+  ]
 
 
 def Initialized():
@@ -365,10 +474,6 @@ def DidOpenTextDocument( file_state, file_types, file_contents ):
 
 
 def DidChangeTextDocument( file_state, file_contents ):
-  # NOTE: Passing `None` for the second argument will send an empty
-  # textDocument/didChange notification. It is useful when a LSP server
-  # needs to be forced to reparse a file without sending all the changes.
-  # More specifically, clangd completer relies on this.
   return BuildNotification( 'textDocument/didChange', {
     'textDocument': {
       'uri': FilePathToUri( file_state.filename ),
@@ -376,7 +481,7 @@ def DidChangeTextDocument( file_state, file_contents ):
     },
     'contentChanges': [
       { 'text': file_contents },
-    ] if file_contents is not None else [],
+    ]
   } )
 
 
@@ -404,9 +509,7 @@ def DidCloseTextDocument( file_state ):
 
 def Completion( request_id, request_data, codepoint ):
   return BuildRequest( request_id, 'textDocument/completion', {
-    'textDocument': {
-      'uri': FilePathToUri( request_data[ 'filepath' ] ),
-    },
+    'textDocument': TextDocumentIdentifier( request_data ),
     'position': Position( request_data[ 'line_num' ],
                           request_data[ 'line_value' ],
                           codepoint ),
@@ -456,9 +559,7 @@ def Implementation( request_id, request_data ):
 
 def CodeAction( request_id, request_data, best_match_range, diagnostics ):
   return BuildRequest( request_id, 'textDocument/codeAction', {
-    'textDocument': {
-      'uri': FilePathToUri( request_data[ 'filepath' ] ),
-    },
+    'textDocument': TextDocumentIdentifier( request_data ),
     'range': best_match_range,
     'context': {
       'diagnostics': diagnostics,
@@ -468,9 +569,7 @@ def CodeAction( request_id, request_data, best_match_range, diagnostics ):
 
 def Rename( request_id, request_data, new_name ):
   return BuildRequest( request_id, 'textDocument/rename', {
-    'textDocument': {
-      'uri': FilePathToUri( request_data[ 'filepath' ] ),
-    },
+    'textDocument': TextDocumentIdentifier( request_data ),
     'newName': new_name,
     'position': Position( request_data[ 'line_num' ],
                           request_data[ 'line_value' ],
@@ -478,11 +577,29 @@ def Rename( request_id, request_data, new_name ):
   } )
 
 
-def BuildTextDocumentPositionParams( request_data ):
-  return {
+def WorkspaceSymbol( request_id, query ):
+  return BuildRequest( request_id, 'workspace/symbol', {
+    'query': query,
+  } )
+
+
+def DocumentSymbol( request_id, request_data ):
+  return BuildRequest( request_id, 'textDocument/documentSymbol', {
     'textDocument': {
       'uri': FilePathToUri( request_data[ 'filepath' ] ),
     },
+  } )
+
+
+def TextDocumentIdentifier( request_data ):
+  return {
+    'uri': FilePathToUri( request_data[ 'filepath' ] ),
+  }
+
+
+def BuildTextDocumentPositionParams( request_data ):
+  return {
+    'textDocument': TextDocumentIdentifier( request_data ),
     'position': Position( request_data[ 'line_num' ],
                           request_data[ 'line_value' ],
                           request_data[ 'column_codepoint' ] )
@@ -503,20 +620,33 @@ def Position( line_num, line_value, column_codepoint ):
   }
 
 
-def Formatting( request_id, request_data ):
-  return BuildRequest( request_id, 'textDocument/formatting', {
+def PrepareCallHierarchy( request_id, request_data ):
+  return BuildRequest( request_id, 'textDocument/prepareCallHierarchy', {
     'textDocument': {
       'uri': FilePathToUri( request_data[ 'filepath' ] ),
     },
+    'position': Position( request_data[ 'line_num' ],
+                          request_data[ 'line_value' ],
+                          request_data[ 'column_codepoint' ] )
+  } )
+
+
+def CallHierarchy( request_id, direction, item ):
+  return BuildRequest( request_id, f'callHierarchy/{ direction }Calls', {
+    'item': item
+  } )
+
+
+def Formatting( request_id, request_data ):
+  return BuildRequest( request_id, 'textDocument/formatting', {
+    'textDocument': TextDocumentIdentifier( request_data ),
     'options': FormattingOptions( request_data )
   } )
 
 
 def RangeFormatting( request_id, request_data ):
   return BuildRequest( request_id, 'textDocument/rangeFormatting', {
-    'textDocument': {
-      'uri': FilePathToUri( request_data[ 'filepath' ] ),
-    },
+    'textDocument': TextDocumentIdentifier( request_data ),
     'range': Range( request_data ),
     'options': FormattingOptions( request_data )
   } )
@@ -535,17 +665,30 @@ def FormattingOptions( request_data ):
 def Range( request_data ):
   lines = request_data[ 'lines' ]
 
-  start = request_data[ 'range' ][ 'start' ]
-  start_line_num = start[ 'line_num' ]
-  start_line_value = lines[ start_line_num - 1 ]
-  start_codepoint = ByteOffsetToCodepointOffset( start_line_value,
-                                                 start[ 'column_num' ] )
+  if 'range' not in request_data:
+    start_codepoint = request_data[ 'start_codepoint' ]
+    start_line_num = request_data[ 'line_num' ]
+    start_line_value = request_data[ 'line_value' ]
 
-  end = request_data[ 'range' ][ 'end' ]
-  end_line_num = end[ 'line_num' ]
-  end_line_value = lines[ end_line_num - 1 ]
-  end_codepoint = ByteOffsetToCodepointOffset( end_line_value,
-                                               end[ 'column_num' ] )
+    end_codepoint = start_codepoint + 1
+    end_line_num = start_line_num
+    end_line_value = start_line_value
+  else:
+    start = request_data[ 'range' ][ 'start' ]
+    start_line_num = start[ 'line_num' ]
+    end = request_data[ 'range' ][ 'end' ]
+    end_line_num = end[ 'line_num' ]
+
+    try:
+      start_line_value = lines[ start_line_num - 1 ]
+      start_codepoint = ByteOffsetToCodepointOffset( start_line_value,
+                                                     start[ 'column_num' ] )
+
+      end_line_value = lines[ end_line_num - 1 ]
+      end_codepoint = ByteOffsetToCodepointOffset( end_line_value,
+                                                   end[ 'column_num' ] )
+    except IndexError:
+      raise RuntimeError( "Invalid range" )
 
   # LSP requires to use the start of the next line as the end position for a
   # range that ends with a newline.
@@ -564,6 +707,26 @@ def ExecuteCommand( request_id, command, arguments ):
   return BuildRequest( request_id, 'workspace/executeCommand', {
     'command': command,
     'arguments': arguments
+  } )
+
+
+def SemanticTokens( request_id, range_supported, request_data ):
+  if 'range' in request_data and range_supported:
+    return BuildRequest( request_id, 'textDocument/semanticTokens/range', {
+      'textDocument': TextDocumentIdentifier( request_data ),
+      'range': Range( request_data )
+    } )
+  else:
+    return BuildRequest( request_id, 'textDocument/semanticTokens/full', {
+      'textDocument': TextDocumentIdentifier( request_data ),
+    } )
+
+
+def InlayHints( request_id, request_data ):
+  # range is mandatory
+  return BuildRequest( request_id, 'textDocument/inlayHint', {
+    'textDocument': TextDocumentIdentifier( request_data ),
+    'range': Range( request_data )
   } )
 
 
@@ -594,8 +757,7 @@ def _BuildMessageData( message ):
   data = ToBytes( json.dumps( message,
                               separators = ( ',', ':' ),
                               sort_keys=True ) )
-  packet = ToBytes( 'Content-Length: {0}\r\n'
-                    '\r\n'.format( len( data ) ) ) + data
+  packet = ToBytes( f'Content-Length: { len( data ) }\r\n\r\n' ) + data
   return packet
 
 
@@ -641,3 +803,39 @@ def UTF16CodeUnitsToCodepoints( line_value, code_unit_offset ):
 
   bytes_included = value_as_utf16_bytes[ : code_unit_offset * 2 ]
   return len( bytes_included.decode( 'utf-16-le' ) )
+
+
+def ComparePositions( a, b ):
+  """Returns < 0 if a is before b, 0 if a and b are equal and > 0 if a is
+  after b. a and b are both LSP positions."""
+
+  # If they are on the same line, compare character pos
+  if a[ 'line' ] == b[ 'line' ]:
+    return a[ 'character' ] - b[ 'character' ]
+  # otherwise, just compare the lines
+  return a[ 'line' ] - b[ 'line' ]
+
+
+def RangesOverlap( a, b ):
+  """Returns true if the LSP ranges a and b strictly overlap"""
+  # if the diag ends before the start of the cursor, it's not overlapping
+  if ComparePositions( a[ 'end' ], b[ 'start' ] ) < 0:
+    return False
+
+  # if the diag starts after the end of the cursor, it's not overlapping
+  if ComparePositions( a[ 'start' ], b[ 'end' ] ) > 0:
+    return False
+
+  # Otherwise it overaps in at least 1 char
+  return True
+
+
+def RangesOverlapLines( a, b ):
+  """Returns true if the LSP ranges a and b share any lines"""
+  if a[ 'end' ][ 'line' ] < b[ 'start' ][ 'line' ]:
+    return False
+
+  if a[ 'start' ][ 'line' ] > b[ 'end' ][ 'line' ]:
+    return False
+
+  return True

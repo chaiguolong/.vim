@@ -18,17 +18,17 @@ Jedi - an awesome autocompletion, static analysis and refactoring library for Py
     :target: https://github.com/davidhalter/jedi/issues
     :alt: The resolution time is the median time an issue or pull request stays open.
 
-.. image:: https://travis-ci.org/davidhalter/jedi.svg?branch=master
-    :target: https://travis-ci.org/davidhalter/jedi
-    :alt: Linux Tests
-
-.. image:: https://ci.appveyor.com/api/projects/status/mgva3bbawyma1new/branch/master?svg=true
-    :target: https://ci.appveyor.com/project/davidhalter/jedi/branch/master
-    :alt: Windows Tests
+.. image:: https://github.com/davidhalter/jedi/workflows/ci/badge.svg?branch=master
+    :target: https://github.com/davidhalter/jedi/actions
+    :alt: Tests
 
 .. image:: https://coveralls.io/repos/davidhalter/jedi/badge.svg?branch=master
     :target: https://coveralls.io/r/davidhalter/jedi
     :alt: Coverage status
+
+.. image:: https://pepy.tech/badge/jedi
+    :target: https://pepy.tech/project/jedi
+    :alt: PyPI Downloads
 
 `Github Repository <https://github.com/davidhalter/jedi>`_
 
@@ -64,6 +64,9 @@ Docs
 Resources
 ---------
 
+If you want to stay **up-to-date** with releases, please **subscribe** to this
+mailing list: https://groups.google.com/g/jedi-announce. To subscribe you can
+simply send an empty email to ``jedi-announce+subscribe@googlegroups.com``.
+
 - `Source Code on Github <https://github.com/davidhalter/jedi>`_
-- `Travis Testing <https://travis-ci.org/davidhalter/jedi>`_
 - `Python Package Index <https://pypi.python.org/pypi/jedi/>`_

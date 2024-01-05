@@ -158,6 +158,8 @@ FILETYPE_TO_IDENTIFIER_REGEX[ 'elisp' ] = (
   FILETYPE_TO_IDENTIFIER_REGEX[ 'clojure' ] )
 FILETYPE_TO_IDENTIFIER_REGEX[ 'lisp' ] = (
   FILETYPE_TO_IDENTIFIER_REGEX[ 'clojure' ] )
+FILETYPE_TO_IDENTIFIER_REGEX[ 'racket' ] = (
+  FILETYPE_TO_IDENTIFIER_REGEX[ 'scheme' ] )
 
 
 def CommentAndStringRegexForFiletype( filetype ):
@@ -203,7 +205,7 @@ def StartOfLongestIdentifierEndingAtIndex( text, index, filetype = None ):
   return index
 
 
-# If the index is not on a valid identifer, it searches forward until a valid
+# If the index is not on a valid identifier, it searches forward until a valid
 # identifier is found. Returns the identifier.
 def IdentifierAtIndex( text, index, filetype = None ):
   if index > len( text ):

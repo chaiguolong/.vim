@@ -2,6 +2,7 @@ import os
 from glob import glob
 import sys
 import shutil
+from pathlib import Path
 
 import pytest
 
@@ -17,9 +18,9 @@ def test_paths_from_assignment(Script):
         return set(sys_path._paths_from_assignment(script._get_module_context(), expr_stmt))
 
     # Normalize paths for Windows.
-    path_a = os.path.abspath('/foo/a')
-    path_b = os.path.abspath('/foo/b')
-    path_c = os.path.abspath('/foo/c')
+    path_a = Path('/foo/a').absolute()
+    path_b = Path('/foo/b').absolute()
+    path_c = Path('/foo/c').absolute()
 
     assert paths('sys.path[0:0] = ["a"]') == {path_a}
     assert paths('sys.path = ["b", 1, x + 3, y, "c"]') == {path_b, path_c}
@@ -29,14 +30,16 @@ def test_paths_from_assignment(Script):
     assert paths('sys.path, other = ["a"], 2') == set()
 
 
-def test_venv_and_pths(venv_path):
+def test_venv_and_pths(venv_path, environment):
     pjoin = os.path.join
 
-    site_pkg_path = pjoin(venv_path, 'lib')
     if os.name == 'nt':
-        site_pkg_path = pjoin(site_pkg_path, 'site-packages')
+        if environment.version_info < (3, 11):
+            site_pkg_path = pjoin(venv_path, 'lib', 'site-packages')
+        else:
+            site_pkg_path = pjoin(venv_path, 'Lib', 'site-packages')
     else:
-        site_pkg_path = glob(pjoin(site_pkg_path, 'python*', 'site-packages'))[0]
+        site_pkg_path = glob(pjoin(venv_path, 'lib', 'python*', 'site-packages'))[0]
     shutil.rmtree(site_pkg_path)
     shutil.copytree(get_example_dir('sample_venvs', 'pth_directory'), site_pkg_path)
 
@@ -105,5 +108,5 @@ def test_transform_path_to_dotted(sys_path_, module_path, expected, is_package):
     # transform_path_to_dotted expects normalized absolute paths.
     sys_path_ = [os.path.abspath(path) for path in sys_path_]
     module_path = os.path.abspath(module_path)
-    assert sys_path.transform_path_to_dotted(sys_path_, module_path) \
+    assert sys_path.transform_path_to_dotted(sys_path_, Path(module_path)) \
         == (expected, is_package)

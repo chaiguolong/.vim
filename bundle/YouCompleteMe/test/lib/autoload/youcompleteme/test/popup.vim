@@ -3,7 +3,8 @@ function! youcompleteme#test#popup#CheckPopupPosition( winid, pos )
   let actual_pos = popup_getpos( a:winid )
   let ret = 0
   if a:pos->empty()
-    return assert_true( actual_pos->empty(), 'popup pos empty' )
+    return assert_true( actual_pos->empty(),
+          \ 'popup pos empty, got: ' . string( actual_pos ) )
   endif
   for c in keys( a:pos )
     if !has_key( actual_pos, c )
@@ -38,4 +39,22 @@ function! youcompleteme#test#popup#ScreenPos( winid, row, col )
   "
   let [ w_row, w_col ] = win_screenpos( a:winid )
   return { 'row': w_row + a:row, 'col':  w_col + a:col }
+endfunction
+
+
+function! youcompleteme#test#popup#DumpPopups() abort
+  if !exists( 'popup_list' )
+    " Old vim..
+    return ''
+  endif
+
+  let output = 'Popups:'
+  for winid in popup_list()
+    let output .= ' ['
+              \ . string( winid )
+              \ . '@'
+              \ . string( popup_getpos( winid ) )
+              \ . ']'
+  endfor
+  return output
 endfunction

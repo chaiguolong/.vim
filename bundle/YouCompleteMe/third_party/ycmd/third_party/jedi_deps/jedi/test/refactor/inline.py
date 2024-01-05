@@ -3,6 +3,11 @@
 1
 # ++++++++++++++++++++++++++++++++++++++++++++++++++
 There is no name under the cursor
+# -------------------------------------------------- no-reference-error
+#? 0 error
+a = 1
+# ++++++++++++++++++++++++++++++++++++++++++++++++++
+There are no references to this name
 # -------------------------------------------------- multi-equal-error
 def test():
     #? 4 error
@@ -63,7 +68,7 @@ from import_tree import inline_mod
 #? 11 error
 test(inline_mod)
 # ++++++++++++++++++++++++++++++++++++++++++++++++++
-Cannot inline imports or modules
+Cannot inline imports, modules or namespaces
 # -------------------------------------------------- module-works
 from import_tree import inline_mod
 #? 22

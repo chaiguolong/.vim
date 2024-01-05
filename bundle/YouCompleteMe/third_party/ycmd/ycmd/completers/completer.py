@@ -17,13 +17,19 @@
 
 import abc
 import threading
+from ycmd import extra_conf_store
 from ycmd.completers import completer_utils
 from ycmd.responses import NoDiagnosticSupport, SignatureHelpAvailalability
+from ycmd.utils import LOGGER
 
 NO_USER_COMMANDS = 'This completer does not define any commands.'
 
 # Number of seconds to block before returning True in PollForMessages
 MESSAGE_POLL_TIMEOUT = 10
+
+
+class CompletionsChanged( Exception ):
+  pass # pragma: no cover
 
 
 class Completer( metaclass = abc.ABCMeta ):
@@ -119,6 +125,18 @@ class Completer( metaclass = abc.ABCMeta ):
   fields in DetailCandidates() which is called after the filtering is done. See
   python_completer.py for an example.
 
+  You can also support 'delayed' detailing of candidates. The way this works is
+  that you must add a 'resolve' key to the candidate's 'extra_data' which will
+  be round-tripped to the client. The client passes the 'resolve' key back to us
+  in the /resolve_completion request and your completer must override the
+  DetailSingleCandidate() method, which is passed the full list of candidates
+  from the cache and the resolve key supplied. This method must return the
+  candidate, fully detailed. See the LanguageServerCompleter for an example.
+
+  If the completer wants to use extra confs, it should implement Language()
+  function as well, which returns a string that identifies the language in
+  user's .ycmd_extra_conf.py file.
+
   You also need to implement the SupportedFiletypes() function which should
   return a list of strings, where the strings are Vim filetypes your completer
   supports.
@@ -138,7 +156,7 @@ class Completer( metaclass = abc.ABCMeta ):
   Do not override this function. Instead, you need to implement the
   GetSubcommandsMap method. It should return a map between the user commands
   and the methods of your completer. See the documentation of this method for
-  more informations on how to implement it.
+  more information on how to implement it.
 
   Override the Shutdown() member function if your Completer subclass needs to do
   custom cleanup logic on server shutdown.
@@ -192,6 +210,11 @@ class Completer( metaclass = abc.ABCMeta ):
 
     self._completions_cache = CompletionsCache()
     self._max_candidates = user_options[ 'max_num_candidates' ]
+    self._max_candidates_to_detail = user_options[
+      'max_num_candidates_to_detail' ]
+
+    LOGGER.info( f"Completion config: { self._max_candidates }, detailing "
+                 f"{ self._max_candidates_to_detail } candiates" )
 
 
   # It's highly likely you DON'T want to override this function but the *Inner
@@ -280,7 +303,32 @@ class Completer( metaclass = abc.ABCMeta ):
     candidates = self._GetCandidatesFromSubclass( request_data )
     candidates = self.FilterAndSortCandidates( candidates,
                                                request_data[ 'query' ] )
+
     return self.DetailCandidates( request_data, candidates )
+
+
+  def ShouldDetailCandidateList( self, candidates ):
+    if self._max_candidates_to_detail < 0:
+      return True
+
+    if len( candidates ) < self._max_candidates_to_detail:
+      return True
+
+    return False
+
+
+  def ResolveCompletionItem( self, request_data ):
+    candidates = self._completions_cache.GetCompletionsIfCacheValid(
+      request_data,
+      ignore_incomplete = True )
+
+    if not candidates:
+      raise CompletionsChanged( 'Resolve request must not change request data' )
+
+    return self.DetailSingleCandidate( request_data,
+                                       candidates,
+                                       request_data[ 'resolve' ] )
+
 
 
   def _GetCandidatesFromSubclass( self, request_data ):
@@ -293,6 +341,13 @@ class Completer( metaclass = abc.ABCMeta ):
     raw_completions = self.ComputeCandidatesInner( request_data )
     self._completions_cache.Update( request_data, raw_completions )
     return raw_completions
+
+
+  def DetailSingleCandidate( self,
+                             request_data,
+                             candidates,
+                             to_resolve ): # pragma: no cover
+    raise RuntimeError( "Delayed detail candidate not implemented" )
 
 
   def DetailCandidates( self, request_data, candidates ):
@@ -312,6 +367,14 @@ class Completer( metaclass = abc.ABCMeta ):
 
   def ComputeSignaturesInner( self, request_data ):
     return {}
+
+
+  def ComputeSemanticTokens( self, request_data ):
+    return {}
+
+
+  def ComputeInlayHints( self, request_data ):
+    return []
 
 
   def DefinedSubcommands( self ):
@@ -400,6 +463,10 @@ class Completer( metaclass = abc.ABCMeta ):
     pass # pragma: no cover
 
 
+  def Language( self ):
+    pass # pragma: no cover
+
+
   def OnUserCommand( self, arguments, request_data ):
     if not arguments:
       raise ValueError( self.UserCommandsHelpMessage() )
@@ -475,6 +542,29 @@ class Completer( metaclass = abc.ABCMeta ):
     return False
 
 
+  def AdditionalFormattingOptions( self, request_data ):
+    module = extra_conf_store.ModuleForSourceFile( request_data[ 'filepath' ] )
+    try:
+      settings = self.GetSettings( module, request_data )
+      return settings.get( 'formatting_options', {} )
+    except AttributeError:
+      return {}
+
+
+  def GetSettings( self, module, request_data ):
+    if hasattr( module, 'Settings' ):
+      settings = module.Settings(
+        filename = request_data[ 'filepath' ],
+        language = self.Language(),
+        client_data = request_data[ 'extra_conf_data' ] )
+      if settings is not None:
+        return settings
+
+    LOGGER.debug( 'No Settings function defined in %s', module.__file__ )
+
+    return {}
+
+
 class CompletionsCache:
   """Cache of computed completions for a particular request."""
 
@@ -503,7 +593,7 @@ class CompletionsCache:
     self._completions = completions
 
 
-  def GetCompletionsIfCacheValid( self, request_data ):
+  def GetCompletionsIfCacheValid( self, request_data, **kwargs ):
     with self._access_lock:
       return self.GetCompletionsIfCacheValidNoLock( request_data )
 

@@ -1,15 +1,5 @@
-from os.path import dirname
-
-import pytest
-
 from test.helpers import get_example_dir, example_dir
 from jedi import Project
-
-
-@pytest.fixture(autouse=True)
-def skip_not_supported_versions(environment):
-    if environment.version_info < (3, 5):
-        pytest.skip()
 
 
 def test_implicit_namespace_package(Script):
@@ -53,6 +43,9 @@ def test_implicit_namespace_package(Script):
         solution = "foo = '%s'" % solution
         assert completion.description == solution
 
+    c, = script_with_path('import pkg').complete()
+    assert c.docstring() == ""
+
 
 def test_implicit_nested_namespace_package(Script):
     code = 'from implicit_nested_namespaces.namespace.pkg.module import CONST'
@@ -65,7 +58,7 @@ def test_implicit_nested_namespace_package(Script):
     assert len(result) == 1
 
     implicit_pkg, = Script(code, project=project).infer(column=10)
-    assert implicit_pkg.type == 'module'
+    assert implicit_pkg.type == 'namespace'
     assert implicit_pkg.module_path is None
 
 

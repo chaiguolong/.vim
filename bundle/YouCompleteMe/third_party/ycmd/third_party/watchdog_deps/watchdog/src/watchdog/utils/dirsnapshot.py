@@ -1,8 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
 # Copyright 2011 Yesudeep Mangalapilly <yesudeep@gmail.com>
-# Copyright 2012 Google, Inc.
+# Copyright 2012 Google, Inc & contributors.
 # Copyright 2014 Thomas Amland <thomas.amland@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +18,7 @@
 :module: watchdog.utils.dirsnapshot
 :synopsis: Directory snapshots and comparison.
 :author: yesudeep@google.com (Yesudeep Mangalapilly)
+:author: contact@tiger-222.fr (Mickaël Schoentgen)
 
 .. ADMONITION:: Where are the moved events? They "disappeared"
 
@@ -48,17 +46,14 @@ Classes
 
 """
 
+from __future__ import annotations
+
 import errno
 import os
 from stat import S_ISDIR
-from watchdog.utils import stat as default_stat
-try:
-    from os import scandir
-except ImportError:
-    from os import listdir as scandir
 
 
-class DirectorySnapshotDiff(object):
+class DirectorySnapshotDiff:
     """
     Compares two directory snapshots and creates an object that represents
     the difference between the two snapshots.
@@ -89,9 +84,12 @@ class DirectorySnapshotDiff(object):
         deleted = ref.paths - snapshot.paths
 
         if ignore_device:
+
             def get_inode(directory, full_path):
                 return directory.inode(full_path)[0]
+
         else:
+
             def get_inode(directory, full_path):
                 return directory.inode(full_path)
 
@@ -123,11 +121,15 @@ class DirectorySnapshotDiff(object):
         modified = set()
         for path in ref.paths & snapshot.paths:
             if get_inode(ref, path) == get_inode(snapshot, path):
-                if ref.mtime(path) != snapshot.mtime(path) or ref.size(path) != snapshot.size(path):
+                if ref.mtime(path) != snapshot.mtime(path) or ref.size(
+                    path
+                ) != snapshot.size(path):
                     modified.add(path)
 
-        for (old_path, new_path) in moved:
-            if ref.mtime(old_path) != snapshot.mtime(new_path) or ref.size(old_path) != snapshot.size(new_path):
+        for old_path, new_path in moved:
+            if ref.mtime(old_path) != snapshot.mtime(new_path) or ref.size(
+                old_path
+            ) != snapshot.size(new_path):
                 modified.add(old_path)
 
         self._dirs_created = [path for path in created if snapshot.isdir(path)]
@@ -145,8 +147,8 @@ class DirectorySnapshotDiff(object):
 
     def __repr__(self):
         fmt = (
-            '<{0} files(created={1}, deleted={2}, modified={3}, moved={4}),'
-            ' folders(created={5}, deleted={6}, modified={7}, moved={8})>'
+            "<{0} files(created={1}, deleted={2}, modified={3}, moved={4}),"
+            " folders(created={5}, deleted={6}, modified={7}, moved={8})>"
         )
         return fmt.format(
             type(self).__name__,
@@ -157,7 +159,7 @@ class DirectorySnapshotDiff(object):
             len(self._dirs_created),
             len(self._dirs_deleted),
             len(self._dirs_modified),
-            len(self._dirs_moved)
+            len(self._dirs_moved),
         )
 
     @property
@@ -217,7 +219,7 @@ class DirectorySnapshotDiff(object):
         return self._dirs_created
 
 
-class DirectorySnapshot(object):
+class DirectorySnapshot:
     """
     A snapshot of stat information of files in a directory.
 
@@ -237,12 +239,10 @@ class DirectorySnapshot(object):
         A function taking a ``path`` as argument which will be called
         for every entry in the directory tree.
     :param listdir:
-        Use custom listdir function. For details see ``os.scandir`` if available, else ``os.listdir``.
+        Use custom listdir function. For details see ``os.scandir``.
     """
 
-    def __init__(self, path, recursive=True,
-                 stat=default_stat,
-                 listdir=scandir):
+    def __init__(self, path, recursive=True, stat=os.stat, listdir=os.scandir):
         self.recursive = recursive
         self.stat = stat
         self.listdir = listdir
@@ -261,8 +261,7 @@ class DirectorySnapshot(object):
 
     def walk(self, root):
         try:
-            paths = [os.path.join(root, entry if isinstance(entry, str) else entry.name)
-                     for entry in self.listdir(root)]
+            paths = [os.path.join(root, entry.name) for entry in self.listdir(root)]
         except OSError as e:
             # Directory may have been deleted between finding it in the directory
             # list of its parent and trying to delete its contents. If this
@@ -288,12 +287,8 @@ class DirectorySnapshot(object):
                     if S_ISDIR(st.st_mode):
                         for entry in self.walk(path):
                             yield entry
-                except (IOError, OSError) as e:
-                    # IOError for Python 2
-                    # OSError for Python 3
-                    # (should be only PermissionError when dropping Python 2 support)
-                    if e.errno != errno.EACCES:
-                        raise
+                except PermissionError:
+                    pass
 
     @property
     def paths(self):
@@ -309,7 +304,7 @@ class DirectorySnapshot(object):
         return self._inode_to_path.get(id)
 
     def inode(self, path):
-        """ Returns an id for path. """
+        """Returns an id for path."""
         st = self._stat_info[path]
         return (st.st_ino, st.st_dev)
 
@@ -353,7 +348,7 @@ class DirectorySnapshot(object):
         return str(self._stat_info)
 
 
-class EmptyDirectorySnapshot(object):
+class EmptyDirectorySnapshot:
     """Class to implement an empty snapshot. This is used together with
     DirectorySnapshot and DirectorySnapshotDiff in order to get all the files/folders
     in the directory as created.

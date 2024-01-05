@@ -26,10 +26,11 @@ from functools import partial
 
 from tempfile import NamedTemporaryFile
 
+from ycmd import extra_conf_store
 from ycmd import responses
 from ycmd import utils
 from ycmd.completers.completer import Completer
-from ycmd.completers.completer_utils import GetFileLines
+from ycmd.completers.completer_utils import GetFileLines, GetFileContents
 from ycmd.utils import LOGGER, re
 
 SERVER_NOT_RUNNING_MESSAGE = 'TSServer is not running.'
@@ -62,7 +63,7 @@ class DeferredResponse:
 
   def result( self ):
     self._event.wait( timeout = self._timeout )
-    if not self._event.isSet():
+    if not self._event.is_set():
       raise RuntimeError( 'Response Timeout' )
     message = self._message
     if not message[ 'success' ]:
@@ -77,8 +78,10 @@ def FindTSServer( user_options_path ):
     return tsserver
   # The TSServer executable is installed at the root directory on Windows while
   # it's installed in the bin folder on other platforms.
-  for executable in [ os.path.join( TSSERVER_DIR, 'bin', 'tsserver' ),
-                      os.path.join( TSSERVER_DIR, 'tsserver' ),
+  for executable in [ os.path.join( TSSERVER_DIR,
+                                    'node_modules',
+                                    '.bin',
+                                    'tsserver' ),
                       'tsserver' ]:
     tsserver = utils.FindExecutable( executable )
     if tsserver:
@@ -129,7 +132,7 @@ class TypeScriptCompleter( Completer ):
   It uses TSServer which is bundled with TypeScript 1.5
 
   See the protocol here:
-  https://github.com/Microsoft/TypeScript/blob/2cb0dfd99dc2896958b75e44303d8a7a32e5dc33/src/server/protocol.d.ts
+  https://github.com/microsoft/TypeScript/blob/master/src/server/protocol.ts
   """
 
 
@@ -147,7 +150,7 @@ class TypeScriptCompleter( Completer ):
     self._tsserver_is_running = threading.Event()
 
     # Used to prevent threads from concurrently writing to
-    # the tsserver process' stdin
+    # the tsserver process's stdin
     self._write_lock = threading.Lock()
 
     # Each request sent to tsserver must have a sequence id.
@@ -173,18 +176,32 @@ class TypeScriptCompleter( Completer ):
     self._latest_diagnostics_for_file_lock = threading.Lock()
     self._latest_diagnostics_for_file = defaultdict( list )
 
-    # There's someting in the API that lists the trigger characters, but
+    # There's something in the API that lists the trigger characters, but
     # there is no way to request that from the server, so we just hard-code
     # the signature triggers.
     self.SetSignatureHelpTriggers( [ '(', ',', '<' ] )
 
     LOGGER.info( 'Enabling TypeScript completion' )
 
-
   def _SetServerVersion( self ):
     version = self._SendRequest( 'status' )[ 'version' ]
     with self._tsserver_lock:
       self._tsserver_version = version
+
+    # TODO: We should probably make this configurable in ycm_extra_conf.py along
+    # with all the other preferences
+    self._SendCommand( 'configure',  {
+      'preferences': {
+        'includeInlayParameterNameHints': "all",
+        'includeInlayParameterNameHintsWhenArgumentMatchesName': True,
+        'includeInlayFunctionParameterTypeHints': True,
+        'includeInlayVariableTypeHints': True,
+        'includeInlayVariableTypeHintsWhenTypeMatchesName': True,
+        'includeInlayPropertyDeclarationTypeHints': True,
+        'includeInlayFunctionLikeReturnTypeHints': True,
+        'includeInlayEnumMemberValueHints': True,
+      }
+    } )
 
 
   def _StartServer( self ):
@@ -197,14 +214,17 @@ class TypeScriptCompleter( Completer ):
       return
 
     self._logfile = utils.CreateLogfile( LOGFILE_FORMAT )
-    tsserver_log = '-file {path} -level {level}'.format( path = self._logfile,
-                                                         level = _LogLevel() )
+    tsserver_log = f'-file { self._logfile } -level { _LogLevel() }'
     # TSServer gets the configuration for the log file through the
     # environment variable 'TSS_LOG'. This seems to be undocumented but
     # looking at the source code it seems like this is the way:
     # https://github.com/Microsoft/TypeScript/blob/8a93b489454fdcbdf544edef05f73a913449be1d/src/server/server.ts#L136
     environ = os.environ.copy()
     environ[ 'TSS_LOG' ] = tsserver_log
+
+    # TSServer runs out of memory on larger projects. This is the value that
+    # VSCode uses.
+    environ[ 'NODE_OPTIONS' ] = '--max_old_space_size=3072'
 
     LOGGER.info( 'TSServer log file: %s', self._logfile )
 
@@ -215,6 +235,7 @@ class TypeScriptCompleter( Completer ):
                                              stderr = subprocess.STDOUT,
                                              env = environ )
 
+    LOGGER.info( "TSServer started with PID %s", self._tsserver_handle.pid )
     self._tsserver_is_running.set()
 
     utils.StartThread( self._SetServerVersion )
@@ -280,6 +301,8 @@ class TypeScriptCompleter( Completer ):
     content = self._tsserver_handle.stdout.read( content_length )
     if utils.OnWindows() and content.endswith( b'\r' ):
       content += self._tsserver_handle.stdout.read( 1 )
+
+    LOGGER.debug( "RX (tsserver): %s", content )
     return json.loads( utils.ToUnicode( content ) )
 
 
@@ -301,8 +324,11 @@ class TypeScriptCompleter( Completer ):
   def _WriteRequest( self, request ):
     """Write a request to TSServer stdin."""
 
-    serialized_request = utils.ToBytes(
-        json.dumps( request, separators = ( ',', ':' ) ) + '\n' )
+
+    req = json.dumps( request, separators = ( ',', ':' ) )
+    LOGGER.debug( 'TX (tsserver): %s', req )
+    serialized_request = utils.ToBytes( req + '\n' )
+
     with self._write_lock:
       try:
         self._tsserver_handle.stdin.write( serialized_request )
@@ -341,7 +367,7 @@ class TypeScriptCompleter( Completer ):
 
   def _Reload( self, request_data ):
     """
-    Syncronize TSServer's view of the file to
+    Synchronize TSServer's view of the file to
     the contents of the unsaved buffer.
     """
 
@@ -361,12 +387,16 @@ class TypeScriptCompleter( Completer ):
     return utils.ProcessIsRunning( self._tsserver_handle )
 
 
+  def Language( self ):
+    return 'typescript'
+
+
   def ServerIsHealthy( self ):
     return self._ServerIsRunning()
 
 
   def SupportedFiletypes( self ):
-    return [ 'javascript', 'typescript', 'typescriptreact' ]
+    return [ 'javascript', 'typescript', 'typescriptreact', 'javascriptreact' ]
 
 
   def SignatureHelpAvailable( self ):
@@ -375,12 +405,12 @@ class TypeScriptCompleter( Completer ):
 
   def ComputeCandidatesInner( self, request_data ):
     self._Reload( request_data )
-    entries = self._SendRequest( 'completions', {
+    entries = self._SendRequest( 'completionInfo', {
       'file':                         request_data[ 'filepath' ],
       'line':                         request_data[ 'line_num' ],
       'offset':                       request_data[ 'start_codepoint' ],
       'includeExternalModuleExports': True
-    } )
+    } )[ 'entries' ]
     # Ignore entries with the "warning" kind. They are identifiers from the
     # current file that TSServer returns sometimes in JavaScript.
     return [ responses.BuildCompletionData(
@@ -427,6 +457,12 @@ class TypeScriptCompleter( Completer ):
 
   def GetSubcommandsMap( self ):
     return {
+      'GoToCallers'       : ( lambda self, request_data, args:
+                              self._CallHierarchy( request_data,
+                                                   [ 'Incoming' ] ) ),
+      'GoToCallees'  : ( lambda self, request_data, args:
+                              self._CallHierarchy( request_data,
+                                                   [ 'Outgoing' ] ) ),
       'RestartServer'     : ( lambda self, request_data, args:
                               self._RestartServer( request_data ) ),
       'StopServer'        : ( lambda self, request_data, args:
@@ -443,6 +479,8 @@ class TypeScriptCompleter( Completer ):
                               self._GoToReferences( request_data ) ),
       'GoToType'          : ( lambda self, request_data, args:
                               self._GoToType( request_data ) ),
+      'GoToSymbol'        : ( lambda self, request_data, args:
+                              self._GoToSymbol( request_data, args ) ),
       'GetType'           : ( lambda self, request_data, args:
                               self._GetType( request_data ) ),
       'GetDoc'            : ( lambda self, request_data, args:
@@ -468,7 +506,57 @@ class TypeScriptCompleter( Completer ):
     self._SendCommand( 'close', { 'file': filename } )
 
 
+  def ComputeInlayHints( self, request_data ):
+    self._Reload( request_data )
+
+    # Cache the offsets of all the newlines in the file. These are used to
+    # calculate the line/column values from the offsets retuned by the diff
+    # scanner
+    contents = GetFileContents( request_data, request_data[ 'filepath' ] )
+    lines = GetFileLines( request_data, request_data[ 'filepath' ] )
+    newlines = [ -1 ] + [ i for i, c in enumerate( contents ) if c == '\n' ]
+    newlines.append( len( contents ) )
+
+    def LocationToOffset( location ):
+      try:
+        return (
+          newlines[ location[ 'line_num' ] - 1 ]
+          + utils.ByteOffsetToCodepointOffset( lines,
+                                               location[ 'column_num' ] )
+        )
+      except IndexError:
+        raise RuntimeError( "Invalid range" )
+
+    r = request_data[ 'range' ]
+    start = LocationToOffset( r[ 'start' ] )
+    end = LocationToOffset( r[ 'end' ] )
+
+    hints = self._SendRequest( 'provideInlayHints', {
+      'file':   request_data[ 'filepath' ],
+      'start':  start,
+      'length': end - start,
+    } )
+
+    result = [ {
+      'kind': h[ 'kind' ],
+      'label': h[ 'text' ],
+      'position': responses.BuildLocationData(
+          _BuildLocation( lines,
+                          request_data[ 'filepath' ],
+                          h[ 'position' ][ 'line' ],
+                          h[ 'position' ][ 'offset' ] ) ),
+      'paddingLeft': h.get( 'whitespaceBefore', False ),
+      'paddingRight': h.get( 'whitespaceAfter', False ),
+    } for h in hints ]
+
+    LOGGER.debug( "INLAY HINTS: %s", result )
+    return result
+
+
+
   def OnFileReadyToParse( self, request_data ):
+    # Only load the extra conf. We don't need it for anything but Format.
+    extra_conf_store.ModuleFileForSourceFile( request_data[ 'filepath' ] )
     self._Reload( request_data )
 
     diagnostics = self.GetDiagnosticsForCurrentFile( request_data )
@@ -608,6 +696,9 @@ class TypeScriptCompleter( Completer ):
       return {}
 
     def MakeSignature( s ):
+      def GetTSDocs( docs_list ):
+        return '\n'.join( item[ 'text' ] for item in docs_list )
+
       label = _DisplayPartsToString( s[ 'prefixDisplayParts' ] )
       parameters = []
       sep = _DisplayPartsToString( s[ 'separatorDisplayParts' ] )
@@ -621,6 +712,7 @@ class TypeScriptCompleter( Completer ):
           label += sep
 
         parameters.append( {
+          'documentation': GetTSDocs( p.get( 'documentation', [] ) ),
           'label': [ utils.CodepointOffsetToByteOffset( label, start ),
                      utils.CodepointOffsetToByteOffset( label, end ) ]
         } )
@@ -628,6 +720,7 @@ class TypeScriptCompleter( Completer ):
       label += _DisplayPartsToString( s[ 'suffixDisplayParts' ] )
 
       return {
+        'documentation': GetTSDocs( s.get( 'documentation', [] ) ),
         'label': label,
         'parameters': parameters
       }
@@ -655,6 +748,39 @@ class TypeScriptCompleter( Completer ):
     } )
 
 
+  def _CallHierarchy( self, request_data, args ):
+    self._Reload( request_data )
+
+    response = self._SendRequest( f'provideCallHierarchy{ args[ 0 ] }Calls', {
+      'file':   request_data[ 'filepath' ],
+      'line':   request_data[ 'line_num' ],
+      'offset': request_data[ 'column_codepoint' ]
+    } )
+
+    goto_response = []
+    for hierarchy_item in response:
+      description = hierarchy_item.get( 'from', hierarchy_item.get( 'to' ) )
+      filepath = description[ 'file' ]
+      start_position = hierarchy_item[ 'fromSpans' ][ 0 ][ 'start' ]
+      goto_line = start_position[ 'line' ]
+      try:
+        line_value = GetFileLines( request_data, filepath )[ goto_line - 1 ]
+      except IndexError:
+        continue
+      goto_column = utils.CodepointOffsetToByteOffset(
+        line_value,
+        start_position[ 'offset' ] )
+      goto_response.append( responses.BuildGoToResponse(
+        filepath,
+        goto_line,
+        goto_column,
+        description[ 'name' ] ) )
+
+    if goto_response:
+      return goto_response
+    raise RuntimeError( f'No { args[ 0 ].lower() } calls found.' )
+
+
   def _GoToDefinition( self, request_data ):
     self._Reload( request_data )
     filespans = self._SendRequest( 'definition', {
@@ -676,13 +802,13 @@ class TypeScriptCompleter( Completer ):
 
   def _GoToImplementation( self, request_data ):
     self._Reload( request_data )
-    filespans = self._SendRequest( 'implementation', {
-      'file':   request_data[ 'filepath' ],
-      'line':   request_data[ 'line_num' ],
-      'offset': request_data[ 'column_codepoint' ]
-    } )
-
-    if not filespans:
+    try:
+      filespans = self._SendRequest( 'implementation', {
+        'file':   request_data[ 'filepath' ],
+        'line':   request_data[ 'line_num' ],
+        'offset': request_data[ 'column_codepoint' ]
+      } )
+    except RuntimeError:
       raise RuntimeError( 'No implementation found.' )
 
     results = []
@@ -737,6 +863,36 @@ class TypeScriptCompleter( Completer ):
     )
 
 
+  def _GoToSymbol( self, request_data, args ):
+    if len( args ) < 1:
+      raise RuntimeError( 'Must specify something to search for' )
+    query = args[ 0 ]
+
+    self._Reload( request_data )
+    filespans = self._SendRequest( 'navto', {
+      'searchValue': query,
+      'file': request_data[ 'filepath' ]
+    } )
+
+    if not filespans:
+      raise RuntimeError( 'Symbol not found' )
+
+    results = [
+      responses.BuildGoToResponseFromLocation(
+        _BuildLocation( GetFileLines( request_data, fs[ 'file' ] ),
+                        fs[ 'file' ],
+                        fs[ 'start' ][ 'line' ],
+                        fs[ 'start' ][ 'offset' ] ),
+        fs[ 'name' ] )
+      for fs in filespans
+    ]
+
+    if len( results ) == 1:
+      return results[ 0 ]
+
+    return results
+
+
   def _GetType( self, request_data ):
     self._Reload( request_data )
     info = self._SendRequest( 'quickinfo', {
@@ -755,8 +911,7 @@ class TypeScriptCompleter( Completer ):
       'offset': request_data[ 'column_codepoint' ]
     } )
 
-    message = '{0}\n\n{1}'.format( info[ 'displayString' ],
-                                   info[ 'documentation' ] )
+    message = f'{ info[ "displayString" ] }\n\n{ info[ "documentation" ] }'
     return responses.BuildDetailedInfoResponse( message )
 
 
@@ -815,8 +970,8 @@ class TypeScriptCompleter( Completer ):
     } )
 
     if not response[ 'info' ][ 'canRename' ]:
-      raise RuntimeError( 'Value cannot be renamed: {0}'.format(
-        response[ 'info' ][ 'localizedErrorMessage' ] ) )
+      raise RuntimeError( 'Value cannot be renamed: '
+                          f'{ response[ "info" ][ "localizedErrorMessage" ] }' )
 
     # The format of the response is:
     #
@@ -869,14 +1024,15 @@ class TypeScriptCompleter( Completer ):
     # for the list of options. While not standard, a way to support these
     # options, which is already adopted by a number of clients, would be to read
     # the "formatOptions" field in the tsconfig.json file.
-    options = request_data[ 'options' ]
+    options = dict( request_data[ 'options' ] )
+    options[ 'tabSize' ] = options.pop( 'tab_size' )
+    options[ 'indentSize' ] = options[ 'tabSize' ]
+    options[ 'convertTabsToSpaces' ] = options.pop( 'insert_spaces' )
+    options.update(
+      self.AdditionalFormattingOptions( request_data ) )
     self._SendRequest( 'configure', {
       'file': filepath,
-      'formatOptions': {
-        'tabSize': options[ 'tab_size' ],
-        'indentSize': options[ 'tab_size' ],
-        'convertTabsToSpaces': options[ 'insert_spaces' ],
-      }
+      'formatOptions': options
     } )
 
     response = self._SendRequest( 'format',

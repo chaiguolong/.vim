@@ -1,10 +1,11 @@
 import os
 import sys
+from collections import namedtuple
 
 import pytest
 
 from . import helpers
-from jedi.common.utils import indent_block
+from jedi.common import indent_block
 from jedi import RefactoringError
 
 
@@ -36,17 +37,47 @@ unspecified = %s
 """ % (case, sorted(d - a), sorted(a - d))
 
 
-def test_completion(case, monkeypatch, environment, has_typing):
+def test_completion(case, monkeypatch, environment, has_django):
     skip_reason = case.get_skip_reason(environment)
     if skip_reason is not None:
         pytest.skip(skip_reason)
 
-    if 'pep0484_typing' in case.path and sys.version_info[0] == 2:
-        pytest.skip('ditch python 2 finally')
+    if (not has_django) and case.path.endswith('django.py'):
+        pytest.skip('Needs django to be installed to run this test.')
 
-    _CONTAINS_TYPING = ('pep0484_typing', 'pep0484_comments', 'pep0526_variables')
-    if not has_typing and any(x in case.path for x in _CONTAINS_TYPING):
-        pytest.skip('Needs the typing module installed to run this test.')
+    if case.path.endswith("pytest.py"):
+        # to test finding pytest fixtures from external plugins
+        # add a stub pytest plugin to the project sys_path...
+        pytest_plugin_dir = str(helpers.get_example_dir("pytest_plugin_package"))
+        case._project.added_sys_path = [pytest_plugin_dir]
+
+        # ... and mock the entry points to include it
+        # see https://docs.pytest.org/en/stable/how-to/writing_plugins.html#setuptools-entry-points
+        if sys.version_info >= (3, 8):
+            def mock_entry_points(*, group=None):
+                import importlib.metadata
+                entries = [importlib.metadata.EntryPoint(
+                    name=None,
+                    value="pytest_plugin.plugin",
+                    group="pytest11",
+                )]
+
+                if sys.version_info >= (3, 10):
+                    assert group == "pytest11"
+                    return entries
+                else:
+                    assert group is None
+                    return {"pytest11": entries}
+
+            monkeypatch.setattr("importlib.metadata.entry_points", mock_entry_points)
+        else:
+            def mock_iter_entry_points(group):
+                assert group == "pytest11"
+                EntryPoint = namedtuple("EntryPoint", ["module_name"])
+                return [EntryPoint("pytest_plugin.plugin")]
+
+            monkeypatch.setattr("pkg_resources.iter_entry_points", mock_iter_entry_points)
+
     repo_root = helpers.root_dir
     monkeypatch.chdir(os.path.join(repo_root, 'jedi'))
     case.run(assert_case_equal, environment)
@@ -60,15 +91,12 @@ def test_static_analysis(static_analysis_case, environment):
         static_analysis_case.run(assert_static_analysis, environment)
 
 
-def test_refactor(refactor_case, skip_pre_python36, environment):
+def test_refactor(refactor_case, environment):
     """
     Run refactoring test case.
 
     :type refactor_case: :class:`.refactor.RefactoringCase`
     """
-    if sys.version_info < (3, 6):
-        pytest.skip()
-
     desired_result = refactor_case.get_desired_result()
     if refactor_case.type == 'error':
         with pytest.raises(RefactoringError) as e:

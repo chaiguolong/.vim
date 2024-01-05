@@ -10,17 +10,13 @@ Jedi - an awesome autocompletion, static analysis and refactoring library for Py
     :target: https://github.com/davidhalter/jedi/issues
     :alt: The resolution time is the median time an issue or pull request stays open.
 
-.. image:: https://travis-ci.org/davidhalter/jedi.svg?branch=master
-    :target: https://travis-ci.org/davidhalter/jedi
-    :alt: Linux Tests
+.. image:: https://github.com/davidhalter/jedi/workflows/ci/badge.svg?branch=master
+    :target: https://github.com/davidhalter/jedi/actions
+    :alt: Tests
 
-.. image:: https://ci.appveyor.com/api/projects/status/mgva3bbawyma1new/branch/master?svg=true
-    :target: https://ci.appveyor.com/project/davidhalter/jedi/branch/master
-    :alt: Windows Tests
-
-.. image:: https://coveralls.io/repos/davidhalter/jedi/badge.svg?branch=master
-    :target: https://coveralls.io/r/davidhalter/jedi
-    :alt: Coverage status
+.. image:: https://pepy.tech/badge/jedi
+    :target: https://pepy.tech/project/jedi
+    :alt: PyPI Downloads
 
 
 Jedi is a static analysis tool for Python that is typically used in
@@ -46,10 +42,18 @@ Jedi can currently be used with the following editors/projects:
 - `GNOME Builder`_ (with support for GObject Introspection)
 - Gedit (gedi_)
 - wdb_ - Web Debugger
-- `Eric IDE`_ (Available as a plugin)
+- `Eric IDE`_
 - `IPython 6.0.0+ <https://ipython.readthedocs.io/en/stable/whatsnew/version6.html>`_
+- `xonsh shell <https://xon.sh/contents.html>`_ has `jedi extension <https://xon.sh/xontribs.html#jedi>`_
 
 and many more!
+
+There are a few language servers that use Jedi:
+
+- `jedi-language-server <https://github.com/pappasam/jedi-language-server>`_
+- `python-language-server <https://github.com/palantir/python-language-server>`_ (currently unmaintained)
+- `python-lsp-server <https://github.com/python-lsp/python-lsp-server>`_ (fork from python-language-server)
+- `anakin-language-server <https://github.com/muffinmad/anakin-language-server>`_
 
 Here are some pictures taken from jedi-vim_:
 
@@ -72,8 +76,9 @@ Docs are available at `https://jedi.readthedocs.org/en/latest/
 and/or fixes are awesome and most welcome. Jedi uses `semantic versioning
 <https://semver.org/>`_.
 
-If you want to stay up-to-date (News / RFCs), please subscribe to this `github
-thread <https://github.com/davidhalter/jedi/issues/1063>`_.:
+If you want to stay **up-to-date** with releases, please **subscribe** to this
+mailing list: https://groups.google.com/g/jedi-announce. To subscribe you can
+simply send an empty email to ``jedi-announce+subscribe@googlegroups.com``.
 
 Issues & Questions
 ==================
@@ -94,7 +99,7 @@ Features and Limitations
 Jedi's features are listed here:
 `Features <https://jedi.readthedocs.org/en/latest/docs/features.html>`_.
 
-You can run Jedi on CPython 2.7 or 3.5+ but it should also
+You can run Jedi on Python 3.6+ but it should also
 understand code that is older than those versions. Additionally you should be
 able to use `Virtualenvs <https://jedi.readthedocs.org/en/latest/docs/api.html#environments>`_
 very well.

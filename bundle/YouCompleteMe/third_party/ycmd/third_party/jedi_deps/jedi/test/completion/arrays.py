@@ -44,6 +44,8 @@ b[int():]
 
 #? list()
 b[:]
+#? int()
+b[:, :-1]
 
 #? 3
 b[:]
@@ -67,6 +69,20 @@ class _StrangeSlice():
 #? slice()
 _StrangeSlice()[1:2]
 
+for x in b[:]:
+    #? int()
+    x
+
+for x in b[:, :-1]:
+    #?
+    x
+
+class Foo:
+    def __getitem__(self, item):
+        return item
+
+#?
+Foo()[:, :-1][0]
 
 # -----------------
 # iterable multiplication
@@ -215,6 +231,20 @@ f
 g
 
 # -----------------
+# setitem
+# -----------------
+
+class F:
+    setitem_x = [1,2]
+    setitem_x[0] = 3
+
+#? ['setitem_x']
+F().setitem_x
+#? list()
+F().setitem_x
+
+
+# -----------------
 # dicts
 # -----------------
 dic2 = {'asdf': 3, 'b': 'str'}
@@ -271,9 +301,6 @@ d['a']
 dic = {str(key): ''}
 #? str()
 dic['']
-
-# Just skip Python 2 tests from here. EoL soon, I'm too lazy for it.
-# python > 2.7
 
 
 for x in {1: 3.0, '': 1j}:
@@ -473,7 +500,6 @@ def test_func():
 #? int()
 tuple({1})[0]
 
-# python > 2.7
 # -----------------
 # PEP 3132 Extended Iterable Unpacking (star unpacking)
 # -----------------

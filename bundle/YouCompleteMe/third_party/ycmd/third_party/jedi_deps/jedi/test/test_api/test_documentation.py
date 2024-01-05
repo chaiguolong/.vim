@@ -28,6 +28,11 @@ def test_import_keyword(Script):
     # unrelated to #44
 
 
+def test_import_keyword_after_newline(Script):
+    d, = Script("import x\nimport y").help(line=2, column=0)
+    assert d.docstring().startswith('The "import" statement')
+
+
 def test_import_keyword_with_gotos(goto_or_infer):
     assert not goto_or_infer("import x", column=0)
 
@@ -35,6 +40,17 @@ def test_import_keyword_with_gotos(goto_or_infer):
 def test_operator_doc(Script):
     d, = Script("a == b").help(1, 3)
     assert len(d.docstring()) > 100
+
+
+@pytest.mark.parametrize(
+    'code, help_part', [
+        ('str', 'Create a new string object'),
+        ('str.strip', 'Return a copy of the string'),
+    ]
+)
+def test_stdlib_doc(Script, code, help_part):
+    h, = Script(code).help()
+    assert help_part in h.docstring(raw=True)
 
 
 def test_lambda(Script):
@@ -91,15 +107,15 @@ def test_version_info(Script):
     assert c.docstring() == 'sys.version_info\n\nVersion information as a named tuple.'
 
 
-def test_builtin_docstring(goto_or_help_or_infer, skip_python2):
+def test_builtin_docstring(goto_or_help_or_infer):
     d, = goto_or_help_or_infer('open')
 
     doc = d.docstring()
-    assert doc.startswith('open(file: Union[')
+    assert doc.startswith('open(file: ')
     assert 'Open file' in doc
 
 
-def test_docstring_decorator(goto_or_help_or_infer, skip_python2):
+def test_docstring_decorator(goto_or_help_or_infer):
     code = dedent('''
         import types
 
@@ -115,3 +131,18 @@ def test_docstring_decorator(goto_or_help_or_infer, skip_python2):
 
     doc = d.docstring()
     assert doc == 'FunctionType(*args: Any, **kwargs: Any) -> Any\n\nhello'
+
+
+@pytest.mark.parametrize('code', ['', '\n', ' '])
+def test_empty(Script, code):
+    assert not Script(code).help(1, 0)
+
+
+@pytest.mark.parametrize('code', ['f()', '(bar or baz)', 'f[3]'])
+def test_no_help_for_operator(Script, code):
+    assert not Script(code).help()
+
+
+@pytest.mark.parametrize('code', ['()', '(1,)', '[]', '[1]', 'f[]'])
+def test_help_for_operator(Script, code):
+    assert Script(code).help()

@@ -1,10 +1,9 @@
-import sys
 from textwrap import dedent
 import inspect
+from unittest import TestCase
 
 import pytest
 
-from ..helpers import TestCase
 from jedi import cache
 from jedi.parser_utils import get_signature
 from jedi import Interpreter
@@ -40,12 +39,11 @@ class TestSignatures(TestCase):
         run = self._run_simple
 
         # simple
-        s1 = "sorted(a, bool("
-        run(s1, 'sorted', 0, 7)
-        run(s1, 'sorted', 1, 9)
-        run(s1, 'sorted', 1, 10)
-        run(s1, 'sorted', None, 11)
-        run(s1, 'bool', 0, 15)
+        s1 = "tuple(a, bool("
+        run(s1, 'tuple', 0, 6)
+        run(s1, 'tuple', None, 8)
+        run(s1, 'tuple', None, 9)
+        run(s1, 'bool', 0, 14)
 
         s2 = "abs(), "
         run(s2, 'abs', 0, 4)
@@ -66,9 +64,9 @@ class TestSignatures(TestCase):
         run(s4, 'abs', 0, 10)
         run(s4, 'abs', None, 11)
 
-        s5 = "sorted(1,\nif 2:\n def a():"
-        run(s5, 'sorted', 0, 7)
-        run(s5, 'sorted', 1, 9)
+        s5 = "tuple(1,\nif 2:\n def a():"
+        run(s5, 'tuple', 0, 6)
+        run(s5, 'tuple', None, 8)
 
         s6 = "bool().__eq__("
         run(s6, '__eq__', 0)
@@ -90,8 +88,8 @@ class TestSignatures(TestCase):
 
     def test_for(self):
         # jedi-vim #11
-        self._run_simple("for sorted(", 'sorted', 0)
-        self._run_simple("for s in sorted(", 'sorted', 0)
+        self._run_simple("for tuple(", 'tuple', 0)
+        self._run_simple("for s in tuple(", 'tuple', 0)
 
 
 def test_with(Script):
@@ -122,11 +120,8 @@ def test_multiple_signatures(Script):
 
 
 def test_get_signatures_whitespace(Script):
-    s = dedent("""\
-    abs( 
-    def x():
-        pass
-    """)
+    # note: trailing space after 'abs'
+    s = 'abs( \ndef x():\n    pass\n'
     assert_signature(Script, s, 'abs', 0, line=1, column=5)
 
 
@@ -240,13 +235,12 @@ def test_complex(Script, environment):
     func1, = sig1._name.infer()
     func2, = sig2._name.infer()
 
-    if environment.version_info.major == 3:
-        # Do these checks just for Python 3, I'm too lazy to deal with this
-        # legacy stuff. ~ dave.
-        assert get_signature(func1.tree_node) \
-            == 'compile(pattern: AnyStr, flags: _FlagsType = ...) -> Pattern[AnyStr]'
-        assert get_signature(func2.tree_node) \
-            == 'compile(pattern: Pattern[AnyStr], flags: _FlagsType = ...) ->\nPattern[AnyStr]'
+    # Do these checks just for Python 3, I'm too lazy to deal with this
+    # legacy stuff. ~ dave.
+    assert get_signature(func1.tree_node) \
+        == 'compile(pattern: AnyStr, flags: _FlagsType = ...) -> Pattern[AnyStr]'
+    assert get_signature(func2.tree_node) \
+        == 'compile(pattern: Pattern[AnyStr], flags: _FlagsType = ...) ->\nPattern[AnyStr]'
 
     # jedi-vim #70
     s = """def foo("""
@@ -258,7 +252,7 @@ def test_complex(Script, environment):
 
 
 def _params(Script, source, line=None, column=None):
-    signatures = Script(source, line, column).get_signatures()
+    signatures = Script(source).get_signatures(line, column)
     assert len(signatures) == 1
     return signatures[0].params
 
@@ -277,7 +271,7 @@ def test_pow_params(Script):
     # See Github #1357.
     for sig in Script('pow(').get_signatures():
         param_names = [p.name for p in sig.params]
-        assert param_names in (['x', 'y'], ['x', 'y', 'z'])
+        assert param_names in (['base', 'exp'], ['base', 'exp', 'mod'])
 
 
 def test_param_name(Script):
@@ -374,10 +368,8 @@ def test_keyword_argument_index(Script, environment):
     def get(source, column=None):
         return Script(source).get_signatures(column=column)[0]
 
-    # The signature of sorted changed from 2 to 3.
-    py2_offset = int(environment.version_info.major == 2)
-    assert get('sorted([], key=a').index == 1 + py2_offset
-    assert get('sorted([], key=').index == 1 + py2_offset
+    assert get('sorted([], key=a').index == 1
+    assert get('sorted([], key=').index == 1
     assert get('sorted([], no_key=a').index is None
 
     kw_func = 'def foo(a, b): pass\nfoo(b=3, a=4)'
@@ -504,7 +496,7 @@ _calls = [
 
 @pytest.mark.parametrize('ending', ['', ')'])
 @pytest.mark.parametrize('code, call, expected_index', _calls)
-def test_signature_index(skip_python2, Script, environment, code, call, expected_index, ending):
+def test_signature_index(Script, environment, code, call, expected_index, ending):
     if isinstance(expected_index, tuple):
         expected_index = expected_index[environment.version_info > (3, 8)]
     if environment.version_info < (3, 8):
@@ -515,7 +507,6 @@ def test_signature_index(skip_python2, Script, environment, code, call, expected
     assert expected_index == index
 
 
-@pytest.mark.skipif(sys.version_info[0] == 2, reason="Python 2 doesn't support __signature__")
 @pytest.mark.parametrize('code', ['foo', 'instance.foo'])
 def test_arg_defaults(Script, environment, code):
     def foo(arg="bla", arg1=1):
@@ -659,6 +650,7 @@ def test_cursor_after_signature(Script, column):
         ('abs(chr  ( \nclass y: pass', 1, 8, 'abs', 0),
         ('abs(chr  ( \nclass y: pass', 1, 9, 'abs', 0),
         ('abs(chr  ( \nclass y: pass', 1, 10, 'chr', 0),
+        ('abs(foo.bar=3)', 1, 13, 'abs', 0),
     ]
 )
 def test_base_signatures(Script, code, line, column, name, index):

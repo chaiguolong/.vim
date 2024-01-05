@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 ycmd contributors
+# Copyright (C) 2011-2021 ycmd contributors
 #
 # This file is part of YouCompleteMe.
 #
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with YouCompleteMe.  If not, see <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required( VERSION 2.8.7 )
+cmake_minimum_required( VERSION 3.14 )
 
 project( ycm_core )
 
@@ -30,47 +30,41 @@ if ( USE_CLANG_COMPLETER AND
      NOT PATH_TO_LLVM_ROOT AND
      NOT EXTERNAL_LIBCLANG_PATH )
 
-  set( CLANG_VERSION 10.0.0 )
+  set( CLANG_VERSION 17.0.1 )
 
   if ( APPLE )
-    set( LIBCLANG_DIRNAME "libclang-${CLANG_VERSION}-x86_64-apple-darwin" )
-    set( LIBCLANG_SHA256
-         "157c755c0d208414203b56057fd4f9b81dba93fd968e4435217ba1e4026136a8" )
+    if ( "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "arm64" )
+      set( LIBCLANG_DIRNAME "libclang-${CLANG_VERSION}-arm64-apple-darwin" )
+      set( LIBCLANG_SHA256
+           "e90a409dc408214fc553e3b3df2a71f6d67fdd34d9441b6c2be1a043e9542f06" )
+    else()
+      set( LIBCLANG_DIRNAME "libclang-${CLANG_VERSION}-x86_64-apple-darwin" )
+      set( LIBCLANG_SHA256
+           "b70786d68e71b5988fda8c7c377e301a0817ea280f425639e976a573ef266473" )
+    endif()
   elseif ( WIN32 )
     if( 64_BIT_PLATFORM )
       set( LIBCLANG_DIRNAME "libclang-${CLANG_VERSION}-win64" )
       set( LIBCLANG_SHA256
-           "45a2d797fbf9ff53ad5de3891f20c73cf6e2256761501dd32b60948c5fa84dc8" )
+           "7bbb980c2bc5a69ca1b93b8a6a671abb1ad8cab5a5b9f7fff6f7fa300fc1bf07" )
     else()
       set( LIBCLANG_DIRNAME "libclang-${CLANG_VERSION}-win32" )
       set( LIBCLANG_SHA256
-           "9715703fc7f82bc79310296a811e611bc43406faf9102d89ab44ee6a5807a4cb" )
-    endif()
-  elseif ( SYSTEM_IS_FREEBSD )
-    if ( 64_BIT_PLATFORM )
-      set( LIBCLANG_DIRNAME
-           "libclang-${CLANG_VERSION}-amd64-unknown-freebsd11" )
-      set( LIBCLANG_SHA256
-           "7e4f7ee6cff7360c65b73955b6fe177f4c896fc2376d86acaa8c835ee9ca0da9" )
-    else()
-      set( LIBCLANG_DIRNAME
-           "libclang-${CLANG_VERSION}-i386-unknown-freebsd11" )
-      set( LIBCLANG_SHA256
-           "0e34866976876af3c8635ee3aab74361c10904ff617250fa199c5fb1c948c881" )
+           "ef50790e2b01bfb701cd14ec315431a60da7921fc78ac893c0af0b956d6e2223" )
     endif()
   elseif ( CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64.*|AARCH64.*)" )
     set( LIBCLANG_DIRNAME "libclang-${CLANG_VERSION}-aarch64-linux-gnu" )
     set( LIBCLANG_SHA256
-         "558cea25b1a7331be13c74b2e14246ac3762c81b68c064a5eaf4e7a1afffebf0" )
+         "829e4b81d9fddd70ed8bcbeffd1feea909369434b225612148e833fb9b16265b" )
   elseif ( CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm.*|ARM.*)" )
     set( LIBCLANG_DIRNAME "libclang-${CLANG_VERSION}-armv7a-linux-gnueabihf" )
     set( LIBCLANG_SHA256
-         "ea6eb8d3183f55323b13179fa5a884e86c6c23cdab6cb21df8f340de220f4747" )
+         "fdc3df9ef3fe15868340bc0dcd4d0c74814edd06be1d79796b8a402db8aee723" )
   elseif ( CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64)" )
     set( LIBCLANG_DIRNAME
          "libclang-${CLANG_VERSION}-x86_64-unknown-linux-gnu" )
     set( LIBCLANG_SHA256
-         "23c213ae2dba9cc98d09a4997de60e10f270276335f05f1bacf861678e231809" )
+         "bd1ab9ab8e8ccdb46064178bc54a45e7e980b5451cff4fa468596a414e1f7b46" )
   else()
     message( FATAL_ERROR
       "No prebuilt Clang ${CLANG_VERSION} binaries for this system. "
@@ -83,7 +77,7 @@ if ( USE_CLANG_COMPLETER AND
 
   set( LIBCLANG_DOWNLOAD ON )
   set( LIBCLANG_URL
-       "https://dl.bintray.com/ycm-core/libclang/${LIBCLANG_FILENAME}" )
+       "https://github.com/ycm-core/llvm/releases/download/${CLANG_VERSION}/${LIBCLANG_FILENAME}" )
 
   # Check if the Clang archive is already downloaded and its checksum is
   # correct.  If this is not the case, remove it if needed and download it.
@@ -118,12 +112,12 @@ if ( USE_CLANG_COMPLETER AND
 
   # We determine PATH_TO_LLVM_ROOT by searching the libclang library path in
   # CMake build folder.
-  file( GLOB_RECURSE PATH_TO_LIBCLANG ${CMAKE_BINARY_DIR}/libclang.* )
-  if ( NOT PATH_TO_LIBCLANG )
+  file( GLOB_RECURSE PATH_TO_LIBCLANG_WITH_SYMLINKS ${CMAKE_BINARY_DIR}/libclang.* )
+  if ( NOT PATH_TO_LIBCLANG_WITH_SYMLINKS )
     message( FATAL_ERROR "Cannot find path to libclang in prebuilt binaries" )
   endif()
   # file( GLOB_RECURSE ... ) returns a list of files. Take the first one.
-  list( GET PATH_TO_LIBCLANG 0 PATH_TO_LIBCLANG )
+  list( GET PATH_TO_LIBCLANG_WITH_SYMLINKS 0 PATH_TO_LIBCLANG  )
   # We know that LLVM root is parent to the directory containing libclang so we
   # need to go up two directories:
   #
@@ -156,8 +150,7 @@ endif()
 if ( USE_CLANG_COMPLETER )
   message( STATUS "Using libclang to provide semantic completion for C/C++/ObjC" )
 else()
-  message( STATUS "NOT using libclang, no semantic completion for "
-                  "C/C++/ObjC will be available" )
+  message( STATUS "Not using libclang for C/C++/ObjC." )
 endif()
 
 if ( NOT LIBCLANG_FILENAME AND PATH_TO_LLVM_ROOT )
@@ -185,61 +178,19 @@ if ( NOT EXTERNAL_LIBCLANG_PATH AND PATH_TO_LLVM_ROOT )
   set( EXTERNAL_LIBCLANG_PATH ${TEMP} )
 endif()
 
-# This is a workaround for a CMake bug with include_directories(SYSTEM ...)
-# on Mac OS X. Bug report: http://public.kitware.com/Bug/view.php?id=10837
-if ( APPLE )
-  set( CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem " )
-endif()
-
-if ( USE_SYSTEM_BOOST )
-  set( Boost_COMPONENTS filesystem )
-  find_package( Boost REQUIRED COMPONENTS ${Boost_COMPONENTS} )
-else()
-  set( Boost_INCLUDE_DIR ${BoostParts_SOURCE_DIR} )
-  set( Boost_LIBRARIES BoostParts )
-endif()
-
 set( PYBIND11_INCLUDES_DIR "${CMAKE_SOURCE_DIR}/pybind11" )
 
-file( GLOB_RECURSE SERVER_SOURCES *.h *.cpp )
+file( GLOB SERVER_SOURCES *.h *.cpp )
 
-# The test and benchmark sources are a part of a different target, so we remove
-# them. The CMakeFiles cpp file is picked up when the user creates an in-source
-# build, and we don't want that. We also remove client-specific code.
-file( GLOB_RECURSE to_remove tests/*.h tests/*.cpp benchmarks/*.h
-                             benchmarks/*.cpp CMakeFiles/*.cpp *client* )
-
-if( to_remove )
-  list( REMOVE_ITEM SERVER_SOURCES ${to_remove} )
-endif()
-
+include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR} )
 if ( USE_CLANG_COMPLETER )
   include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
     "${CMAKE_CURRENT_SOURCE_DIR}/ClangCompleter" )
   add_definitions( -DUSE_CLANG_COMPLETER )
-else()
-  file( GLOB_RECURSE to_remove_clang ClangCompleter/*.h ClangCompleter/*.cpp )
-
-  if( to_remove_clang )
-    list( REMOVE_ITEM SERVER_SOURCES ${to_remove_clang} )
-  endif()
+  file( GLOB add_clang ClangCompleter/*.h ClangCompleter/*.cpp )
+  list( APPEND SERVER_SOURCES ${add_clang} )
 endif()
-
-# The SYSTEM flag makes sure that -isystem[header path] is passed to the
-# compiler instead of the standard -I[header path]. Headers included with
-# -isystem do not generate warnings (and they shouldn't; e.g. boost warnings are
-# just noise for us since we won't be changing them).
-# Since there is no -isystem flag equivalent on Windows, headers from external
-# projects may conflict with our headers and override them. We prevent that by
-# including these directories after ours.
-include_directories(
-  SYSTEM
-  ${Boost_INCLUDE_DIR}
-  ${PYBIND11_INCLUDES_DIR}
-  ${PYTHON_INCLUDE_DIRS}
-  ${CLANG_INCLUDES_DIR}
-  )
 
 #############################################################################
 
@@ -318,11 +269,70 @@ if ( UNIX AND NOT ( APPLE OR SYSTEM_IS_OPENBSD OR HAIKU ) )
   set( EXTRA_LIBS rt )
 endif()
 
+# Check if we need to add -lstdc++fs or -lc++fs or nothing
+file( WRITE ${CMAKE_CURRENT_BINARY_DIR}/main.cpp "#include <filesystem>\nint main( int argc, char ** argv ) {\n  std::filesystem::path p( argv[ 0 ] );\n  return p.string().length();\n}" )
+try_compile( STD_FS_NO_LIB_NEEDED ${CMAKE_CURRENT_BINARY_DIR}
+             SOURCES ${CMAKE_CURRENT_BINARY_DIR}/main.cpp
+             CXX_STANDARD 17
+             CXX_STANDARD_REQUIRED TRUE
+             CXX_EXTENSIONS ${NEEDS_EXTENSIONS} )
+try_compile( STD_FS_NEEDS_STDCXXFS ${CMAKE_CURRENT_BINARY_DIR}
+             SOURCES ${CMAKE_CURRENT_BINARY_DIR}/main.cpp
+             CXX_STANDARD 17
+             CXX_STANDARD_REQUIRED TRUE
+             CXX_EXTENSIONS ${NEEDS_EXTENSIONS}
+             LINK_LIBRARIES stdc++fs )
+try_compile( STD_FS_NEEDS_CXXFS ${CMAKE_CURRENT_BINARY_DIR}
+             SOURCES ${CMAKE_CURRENT_BINARY_DIR}/main.cpp
+             CXX_STANDARD 17
+             CXX_STANDARD_REQUIRED TRUE
+             CXX_EXTENSIONS ${NEEDS_EXTENSIONS}
+             LINK_LIBRARIES c++fs )
+file( REMOVE ${CMAKE_CURRENT_BINARY_DIR}/main.cpp )
+
+if( ${STD_FS_NEEDS_STDCXXFS} )
+  set( STD_FS_LIB stdc++fs )
+elseif( ${STD_FS_NEEDS_CXXFS} )
+  set( STD_FS_LIB c++fs )
+elseif( ${STD_FS_NO_LIB_NEEDED} )
+  set( STD_FS_LIB "" )
+else()
+  message( FATAL_ERROR "Unknown compiler - C++17 filesystem library missing" )
+endif()
+
+# Check if Abseil supports this environment
+file( WRITE ${CMAKE_CURRENT_BINARY_DIR}/main.cpp "#include <absl/base/policy_checks.h>\nint main() {}" )
+try_compile( ABSL_SUPPORTED ${CMAKE_CURRENT_BINARY_DIR}
+             SOURCES ${CMAKE_CURRENT_BINARY_DIR}/main.cpp
+             CMAKE_FLAGS -DINCLUDE_DIRECTORIES=${CMAKE_SOURCE_DIR}/absl
+             CXX_STANDARD 17
+             CXX_STANDARD_REQUIRED TRUE
+             CXX_EXTENSIONS ${NEEDS_EXTENSIONS} )
+file( REMOVE ${CMAKE_CURRENT_BINARY_DIR}/main.cpp )
+
+if( ${ABSL_SUPPORTED} )
+  message( STATUS "Using Abseil hash tables" )
+  set( EXTRA_LIBS ${EXTRA_LIBS} absl::flat_hash_map absl::flat_hash_set )
+else()
+  message( STATUS "Using STL hash tables" )
+endif()
+
 #############################################################################
 
-add_library( ${PROJECT_NAME} SHARED
-             ${SERVER_SOURCES}
-           )
+add_library( ${PROJECT_NAME} SHARED ${SERVER_SOURCES})
+
+if ( ${ABSL_SUPPORTED} )
+  target_compile_definitions( ${PROJECT_NAME} PUBLIC YCM_ABSEIL_SUPPORTED )
+endif()
+
+target_include_directories(
+  ${PROJECT_NAME}
+  SYSTEM
+  PUBLIC ${PYBIND11_INCLUDES_DIR}
+  PUBLIC ${Python3_INCLUDE_DIRS}
+  PUBLIC ${CLANG_INCLUDES_DIR}
+  PUBLIC ${CMAKE_SOURCE_DIR}/absl
+  )
 
 if ( USE_CLANG_COMPLETER AND NOT LIBCLANG_TARGET )
      message( FATAL_ERROR "Using Clang completer, but no libclang found. "
@@ -331,14 +341,21 @@ if ( USE_CLANG_COMPLETER AND NOT LIBCLANG_TARGET )
 endif()
 
 target_link_libraries( ${PROJECT_NAME}
-                       ${Boost_LIBRARIES}
-                       ${PYTHON_LIBRARIES}
-                       ${LIBCLANG_TARGET}
-                       ${EXTRA_LIBS}
+                       PUBLIC ${Python3_LIBRARIES}
+                       PUBLIC ${LIBCLANG_TARGET}
+                       PUBLIC ${STD_FS_LIB}
+                       PUBLIC ${EXTRA_LIBS}
                      )
 
 if( LIBCLANG_TARGET )
   set( LIBCLANG_DIR "${CMAKE_SOURCE_DIR}/../third_party/clang/lib" )
+  # add rpath to libclang and remove rpath to temporary directory
+  if ( NOT MSVC )
+    set_target_properties( ${PROJECT_NAME} PROPERTIES
+      BUILD_WITH_INSTALL_RPATH ON
+      SKIP_BUILD_RPATH FALSE
+      INSTALL_RPATH ${LIBCLANG_DIR} )
+  endif ()
   # Remove all previous libclang libraries.
   file( GLOB LIBCLANG_FILEPATHS "${LIBCLANG_DIR}/libclang*" )
   foreach( FILEPATH ${LIBCLANG_FILEPATHS} )
@@ -352,11 +369,13 @@ if( LIBCLANG_TARGET )
       COMMAND ${CMAKE_COMMAND} -E copy "${PATH_TO_LLVM_ROOT}/bin/libclang.dll" "${LIBCLANG_DIR}"
     )
   else()
-    add_custom_command(
-      TARGET ${PROJECT_NAME}
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy "${LIBCLANG_TARGET}" "${LIBCLANG_DIR}"
-    )
+    foreach( LIBCLANG_FILE ${PATH_TO_LIBCLANG_WITH_SYMLINKS} )
+      add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND cp -a ${LIBCLANG_FILE} "${LIBCLANG_DIR}"
+      )
+    endforeach()
   endif()
 endif()
 
@@ -365,7 +384,14 @@ endif()
 
 # We don't want the "lib" prefix, it can screw up python when it tries to search
 # for our module
-set_target_properties( ${PROJECT_NAME} PROPERTIES PREFIX "")
+execute_process( COMMAND
+  "${Python3_EXECUTABLE}" "-c"
+  "print(__import__('sysconfig').get_config_var('EXT_SUFFIX'))"
+  OUTPUT_VARIABLE PYTHON_EXTENSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE )
+set_target_properties( ${PROJECT_NAME} PROPERTIES
+                        PREFIX ""
+                        SUFFIX "${PYTHON_EXTENSION}" )
 
 if ( WIN32 OR CYGWIN OR MSYS )
   # DLL platforms put dlls in the RUNTIME_OUTPUT_DIRECTORY
@@ -378,19 +404,6 @@ if ( WIN32 OR CYGWIN OR MSYS )
     set_target_properties( ${PROJECT_NAME} PROPERTIES
       RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_SOURCE_DIR}/../.. )
   endforeach()
-
-  if ( WIN32 )
-    # This is the extension for compiled Python modules on Windows
-    set_target_properties( ${PROJECT_NAME} PROPERTIES SUFFIX ".pyd")
-  elseif ( CYGWIN OR MSYS )
-    # This is the extension for compiled Python modules in Cygwin and msys
-    set_target_properties( ${PROJECT_NAME} PROPERTIES SUFFIX ".dll")
-  endif()
-else()
-  # Even on macs, we want a .so extension instead of a .dylib which is what
-  # cmake would give us by default. Python won't recognize a .dylib as a module,
-  # but it will recognize a .so
-  set_target_properties( ${PROJECT_NAME} PROPERTIES SUFFIX ".so")
 endif()
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
@@ -398,24 +411,26 @@ set_target_properties( ${PROJECT_NAME} PROPERTIES
 
 #############################################################################
 
-
-# For some reason, Xcode is too dumb to understand the -isystem flag and thus
-# borks on warnings in Boost.
-if ( USE_DEV_FLAGS AND ( CMAKE_COMPILER_IS_GNUCXX OR COMPILER_IS_CLANG ) AND
-     NOT CMAKE_GENERATOR_IS_XCODE )
+if ( USE_DEV_FLAGS AND ( CMAKE_COMPILER_IS_GNUCXX OR COMPILER_IS_CLANG ) )
   # We want all warnings, and warnings should be treated as errors
-  set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror" )
+  target_compile_options( ${PROJECT_NAME} PUBLIC "-Wall" "-Wextra" "-Werror" )
+endif()
+
+#############################################################################
+
+if ( CMAKE_COMPILER_IS_GNUCXX AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12 )
+  target_compile_options( ${PROJECT_NAME} PRIVATE "-Wno-bidi-chars" )
 endif()
 
 #############################################################################
 
 if( SYSTEM_IS_SUNOS )
   # SunOS needs this setting for thread support
-  set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthreads" )
+  target_compile_options( ${PROJECT_NAME} PUBLIC "-pthreads" )
 endif()
 
 if( SYSTEM_IS_OPENBSD OR SYSTEM_IS_FREEBSD )
-  set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread" )
+  target_compile_options( ${PROJECT_NAME} PUBLIC "-pthread" )
 endif()
 
 if ( DEFINED ENV{YCM_TESTRUN} )
@@ -445,6 +460,4 @@ if( USE_CLANG_TIDY )
   else()
     message( STATUS "clang-tidy not found" )
   endif()
-else()
-  message( STATUS "NOT using clang-tidy for static analysis." )
 endif()

@@ -40,12 +40,13 @@ LANGUAGE_SERVER_HOME = os.path.abspath( os.path.join(
   'target',
   'repository' ) )
 
-PATH_TO_JAVA = utils.PathToFirstExistingExecutable( [ 'java' ] )
+PATH_TO_JAVA = None
 
 PROJECT_FILE_TAILS = [
   '.project',
   'pom.xml',
-  'build.gradle'
+  'build.gradle',
+  'build.gradle.kts'
 ]
 
 DEFAULT_WORKSPACE_ROOT_PATH = os.path.abspath( os.path.join(
@@ -102,30 +103,36 @@ WORKSPACE_ROOT_PATH_OPTION = 'java_jdtls_workspace_root_path'
 EXTENSION_PATH_OPTION = 'java_jdtls_extension_path'
 
 
-def ShouldEnableJavaCompleter():
+def ShouldEnableJavaCompleter( user_options ):
   LOGGER.info( 'Looking for jdt.ls' )
+
+  global PATH_TO_JAVA
+  PATH_TO_JAVA = utils.FindExecutableWithFallback(
+    user_options[ 'java_binary_path' ],
+    utils.FindExecutable( 'java' ) )
+
   if not PATH_TO_JAVA:
-    LOGGER.warning( "Not enabling java completion: Couldn't find java" )
+    LOGGER.warning( "Not enabling java completion: Couldn't find java 11" )
     return False
 
-  if not os.path.exists( LANGUAGE_SERVER_HOME ):
+  if not _PathToLauncherJar( user_options ):
     LOGGER.warning( 'Not using java completion: jdt.ls is not installed' )
-    return False
-
-  if not _PathToLauncherJar():
-    LOGGER.warning( 'Not using java completion: jdt.ls is not built' )
     return False
 
   return True
 
 
-def _PathToLauncherJar():
+def _LanguageServerHome( user_options ):
+  return user_options.get( 'java_jdtls_repository_path', LANGUAGE_SERVER_HOME )
+
+
+def _PathToLauncherJar( user_options ):
   # The file name changes between version of eclipse, so we use a glob as
   # recommended by the language server developers. There should only be one.
   launcher_jars = glob.glob(
     os.path.abspath(
       os.path.join(
-        LANGUAGE_SERVER_HOME,
+        _LanguageServerHome( user_options ),
         'plugins',
         'org.eclipse.equinox.launcher_*.jar' ) ) )
 
@@ -142,8 +149,7 @@ def _CollectExtensionBundles( extension_path ):
 
   for extension_dir in extension_path:
     if not os.path.isdir( extension_dir ):
-      LOGGER.info( 'extension directory does not exist: {0}'.format(
-        extension_dir ) )
+      LOGGER.info( f'extension directory does not exist: { extension_dir }' )
       continue
 
     for path in os.listdir( extension_dir ):
@@ -151,25 +157,24 @@ def _CollectExtensionBundles( extension_path ):
       manifest_file = os.path.join( path, 'package.json' )
 
       if not os.path.isdir( path ) or not os.path.isfile( manifest_file ):
-        LOGGER.debug( '{0} is not an extension directory'.format( path ) )
+        LOGGER.debug( f'{ path } is not an extension directory' )
         continue
 
       manifest_json = utils.ReadFile( manifest_file )
       try:
         manifest = json.loads( manifest_json )
       except ValueError:
-        LOGGER.exception( 'Could not load bundle {0}'.format( manifest_file ) )
+        LOGGER.exception( f'Could not load bundle { manifest_file }' )
         continue
 
       if ( 'contributes' not in manifest or
            'javaExtensions' not in manifest[ 'contributes' ] or
            not isinstance( manifest[ 'contributes' ][ 'javaExtensions' ],
                            list ) ):
-        LOGGER.info( 'Bundle {0} is not a java extension'.format(
-          manifest_file ) )
+        LOGGER.info( f'Bundle { manifest_file } is not a java extension' )
         continue
 
-      LOGGER.info( 'Found bundle: {0}'.format( manifest_file ) )
+      LOGGER.info( f'Found bundle: { manifest_file }' )
 
       extension_bundles.extend( [
         os.path.join( path, p )
@@ -179,7 +184,7 @@ def _CollectExtensionBundles( extension_path ):
   return extension_bundles
 
 
-def _LauncherConfiguration( workspace_root, wipe_config ):
+def _LauncherConfiguration( user_options, workspace_root, wipe_config ):
   if utils.OnMac():
     config = 'config_mac'
   elif utils.OnWindows():
@@ -207,9 +212,10 @@ def _LauncherConfiguration( workspace_root, wipe_config ):
   working_config = os.path.abspath( os.path.join( workspace_root,
                                                   config ) )
   working_config_file = os.path.join( working_config, CONFIG_FILENAME )
-  base_config_file = os.path.abspath( os.path.join( LANGUAGE_SERVER_HOME,
-                                                    config,
-                                                    CONFIG_FILENAME ) )
+  base_config_file = os.path.abspath(
+    os.path.join( _LanguageServerHome( user_options ),
+                  config,
+                  CONFIG_FILENAME ) )
 
   if os.path.isdir( working_config ):
     if wipe_config:
@@ -281,7 +287,10 @@ def _WorkspaceDirForProject( workspace_root_path,
 
 class JavaCompleter( language_server_completer.LanguageServerCompleter ):
   def __init__( self, user_options ):
+    # Stuff used by _Reset have to be set here as super().__init__() calls it.
     self._workspace_path = None
+    self._user_options = user_options
+
     super().__init__( user_options )
 
     self._server_keep_logfiles = user_options[ 'server_keep_logfiles' ]
@@ -293,8 +302,7 @@ class JavaCompleter( language_server_completer.LanguageServerCompleter ):
       self._workspace_root_path = DEFAULT_WORKSPACE_ROOT_PATH
 
     if not isinstance( self._extension_path, list ):
-      raise ValueError( '{0} option must be a list'.format(
-        EXTENSION_PATH_OPTION ) )
+      raise ValueError( f'{ EXTENSION_PATH_OPTION } option must be a list' )
 
     if not self._extension_path:
       self._extension_path = [ DEFAULT_EXTENSION_PATH ]
@@ -313,7 +321,23 @@ class JavaCompleter( language_server_completer.LanguageServerCompleter ):
 
   def DefaultSettings( self, request_data ):
     return {
-      'bundles': self._bundles
+      'bundles': self._bundles,
+
+      # This disables re-checking every open file on every change to every file.
+      # But can lead to stale diagnostics. Unfortunately, this can be kind of
+      # annoying, so we don't enable it by default. JDT does re-validate if you
+      # force load a file, but there isn't a nice way to force it to revalidate
+      # a specific file e.g. OnFileReadyToParse, so far as i know.
+      # If users have perf problems, they can set this in the .ycm_extra_conf.py
+      #
+      #    def Settings( **kwargs ):
+      #      return {
+      #        'ls': {
+      #          'java.edit.validateAllOpenBuffersOnChanges': False
+      #        }
+      #      }
+      #
+      # 'java.edit.validateAllOpenBuffersOnChanges': False
     }
 
 
@@ -323,6 +347,10 @@ class JavaCompleter( language_server_completer.LanguageServerCompleter ):
 
   def GetSignatureTriggerCharacters( self, server_trigger_characters ):
     return server_trigger_characters + [ ',' ]
+
+
+  def GetTriggerCharacters( self, server_trigger_characters ):
+    return list( filter( lambda t: t != ' ', server_trigger_characters ) )
 
 
   def GetCustomSubcommands( self ):
@@ -413,7 +441,7 @@ class JavaCompleter( language_server_completer.LanguageServerCompleter ):
         LOGGER.exception( 'Failed to clean up workspace dir %s',
                           self._workspace_path )
 
-    self._launcher_path = _PathToLauncherJar()
+    self._launcher_path = _PathToLauncherJar( self._user_options )
     self._launcher_config = None
     self._workspace_path = None
     self._java_project_dir = None
@@ -424,6 +452,9 @@ class JavaCompleter( language_server_completer.LanguageServerCompleter ):
 
     super()._Reset()
 
+
+  def _GetJvmArgs( self, request_data ):
+    return self._settings.get( 'server', {} ).get( 'jvm_args', [] )
 
 
   def StartServer( self,
@@ -438,7 +469,7 @@ class JavaCompleter( language_server_completer.LanguageServerCompleter ):
         if project_directory:
           self._java_project_dir = project_directory
         elif 'project_directory' in self._settings:
-          self._java_project_dir = utils.AbsoluatePath(
+          self._java_project_dir = utils.AbsolutePath(
             self._settings[ 'project_directory' ],
             self._extra_conf_dir )
         else:
@@ -452,16 +483,15 @@ class JavaCompleter( language_server_completer.LanguageServerCompleter ):
 
         if not self._use_clean_workspace and wipe_workspace:
           if os.path.isdir( self._workspace_path ):
-            LOGGER.info( 'Wiping out workspace {0}'.format(
-              self._workspace_path ) )
+            LOGGER.info( f'Wiping out workspace { self._workspace_path }' )
             shutil.rmtree( self._workspace_path )
 
         self._launcher_config = _LauncherConfiguration(
-            self._workspace_root_path,
-            wipe_config )
+          self._user_options,
+          self._workspace_root_path,
+          wipe_config )
 
-        self._command = [
-          PATH_TO_JAVA,
+        self._command = [ PATH_TO_JAVA ] + self._GetJvmArgs( request_data ) + [
           '-Dfile.encoding=UTF-8',
           '-Declipse.application=org.eclipse.jdt.ls.core.id1',
           '-Dosgi.bundles.defaultStartLevel=4',
@@ -519,11 +549,11 @@ class JavaCompleter( language_server_completer.LanguageServerCompleter ):
       if notification[ 'params' ][ 'type' ] == 'Started':
         self._started_message_sent = True
         return responses.BuildDisplayMessageResponse(
-          'Initializing Java completer: {}'.format( message ) )
+          f'Initializing Java completer: { message }' )
 
       if not self._started_message_sent:
         return responses.BuildDisplayMessageResponse(
-          'Initializing Java completer: {}'.format( message ) )
+          f'Initializing Java completer: { message }' )
 
     return super().ConvertNotificationToMessage( request_data, notification )
 
